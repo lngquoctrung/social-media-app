@@ -1,0 +1,79 @@
+.about__background {
+	@apply min-h-screen bg-gradient-to-br from-[#f0e9f7] to-[#55535f] p-8;
+}
+
+.about {
+	@apply max-w-6xl mx-auto;
+}
+
+.about .about__header {
+	@apply text-2xl font-bold mb-8 font-serif;
+}
+
+.about__body {
+	@apply grid grid-cols-1 md:grid-cols-[300px_1fr] gap-8;
+}
+
+.profile-card {
+	@apply bg-white rounded-3xl p-8 shadow-md flex flex-col h-full;
+}
+
+.profile-card__avatar {
+	@apply mx-auto mb-4;
+}
+
+.avatar__frame {
+	@apply w-48 h-48 rounded-2xl overflow-hidden bg-pink-50;
+}
+
+.avatar__image {
+	@apply w-full h-full object-cover;
+}
+
+.profile-card__name {
+	@apply text-2xl font-bold text-center mb-2;
+}
+
+.profile-card__contact {
+	@apply flex justify-center gap-4 mb-8;
+}
+
+.profile-card__contact-item {
+	@apply w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-black hover:text-white transition-colors;
+}
+
+.profile-card__info {
+	@apply mt-auto space-y-4;
+}
+
+.profile-card__info-item {
+	@apply flex items-center gap-2;
+}
+
+.profile-detail {
+	@apply space-y-8;
+}
+
+.profile-detail__nav {
+	@apply flex flex-wrap gap-4;
+}
+
+.profile-detail__nav-item {
+	@apply px-6 py-3 rounded-xl flex items-center gap-2 transition-colors;
+}
+
+.profile-detail__content {
+	@apply bg-white rounded-3xl p-8 shadow-md;
+}
+
+.profile-detail__header {
+	@apply text-3xl font-bold mb-6 relative inline-block after:content-[''] after:absolute after:bottom-[-6px] after:left-0 after:w-full after:h-1 after:bg-black;
+}
+
+.profile-detail__body {
+	@apply space-y-4;
+}
+
+.about__logout-btn {
+	@apply border px-5 py-2 rounded-xl  text-white hover:bg-gray-300 hover:text-black active:bg-white active:text-black;
+}

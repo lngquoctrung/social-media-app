@@ -1,0 +1,3 @@
+.post-list {
+	@apply mx-auto my-10 flex flex-col gap-10 w-[75%] md:my-20 md:w-2/3;
+}

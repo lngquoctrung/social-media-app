@@ -1,0 +1,47 @@
+.login-form {
+	@apply border rounded-md p-4 py-8 m-auto md:p-8 md:w-2/3 lg:w-1/3;
+}
+
+.login-form__header {
+	@apply font-bold text-2xl mb-5;
+}
+
+.login-form__group {
+	@apply w-full mb-3;
+}
+
+.login-form__label {
+	@apply font-bold;
+}
+
+.login-form__control {
+	@apply w-full p-2 bg-white border-slate-300 border-2 rounded-md resize-none;
+}
+
+.login-form__validated {
+	@apply text-[0.775rem] text-white rounded-md w-fit p-1 mt-1 bg-red-600;
+}
+
+.login-form__group--flex {
+	@apply flex justify-between;
+}
+
+.login-form__group-check {
+	@apply flex items-center;
+}
+
+.login-form__group-check .login-form__label {
+	@apply font-normal;
+}
+
+.login-form__check {
+	@apply mr-1;
+}
+
+.login-form__link {
+	@apply text-blue-500;
+}
+
+.login-form__group .login-form__btn {
+	@apply w-full bg-blue-400 rounded-md mt-2 py-3 text-white active:bg-blue-600;
+}
