@@ -17,6 +17,11 @@ const userSchema = new mongoose.Schema({
 		default:
 			"http://localhost:5050/api/v1/public/images/avatars/default-avatar.jpg",
 	},
+	gender: {
+		type: String,
+		enum: ["male", "female", "other"],
+		default: "other",
+	},
 	role: {
 		type: String,
 		default: "user",

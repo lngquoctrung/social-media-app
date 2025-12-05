@@ -6,10 +6,18 @@ const asyncHandler = require("../../core/async.handler");
 
 const router = express.Router();
 
-router.get("/",
+// router.get("/",
+//     authMiddleware,
+//     roleMiddleware(["admin"]),
+//     asyncHandler(userController.getAllUsers)
+// );
+router.get("/me",
     authMiddleware,
-    roleMiddleware(["admin"]),
-    asyncHandler(userController.getAllUsers)
-);
+    asyncHandler(userController.getProfile)
+)
+router.put("/me",
+    authMiddleware,
+    asyncHandler(userController.updateProfile)
+)
 
 module.exports = router;
