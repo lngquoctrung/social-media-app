@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const { AuthFailureError } = require('../core/error.response');
 const { verifyToken } = require('../utils/jwt.util');
+const tokenService = require('../services/token.service');
 
 const authMiddleware = async (req, res, next) => {
 	try {
@@ -11,13 +12,19 @@ const authMiddleware = async (req, res, next) => {
 		}
 		// Get token
 		const token = authHeader.split(" ")[1];
-		if (!token) throw new AuthFailureError({ message: "Token missing " });
+		if (!token) throw new AuthFailureError({ message: "Token missing" });
 
 		// Verify token
-		const decodeToken = verifyToken(token);
+		const decodeToken = await verifyToken(token);
 
-		// Get user
+		// Get token id
+		const storedKey = await tokenService.findByUserId(decodeToken.userId);
+		if (!storedKey) throw new AuthFailureError({ message: "Token not found" });
+
+		// Assign user and token id for next middleware
+		req.storedKey = storedKey;
 		req.user = decodeToken;
+
 		next();
 	} catch (err) {
 		next(err);

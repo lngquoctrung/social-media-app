@@ -1,8 +1,8 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 // * Define validations for User model
 const userSchema = new mongoose.Schema({
-	fullName: {
+	name: {
 		type: String,
 	},
 	email: {
@@ -15,15 +15,11 @@ const userSchema = new mongoose.Schema({
 	avatar: {
 		type: String,
 		default:
-			'http://localhost:5050/api/v1/public/images/avatars/default-avatar.jpg',
+			"http://localhost:5050/api/v1/public/images/avatars/default-avatar.jpg",
 	},
 	role: {
 		type: String,
-		default: 'user',
-	},
-	refreshToken: {
-		type: String,
-		default: '',
+		default: "user",
 	},
 	createdAt: {
 		type: Date,
@@ -33,6 +29,9 @@ const userSchema = new mongoose.Schema({
 		type: Date,
 		default: Date.now,
 	},
+}, {
+	collection: "Users",
+	timestamps: true,
 });
 
-module.exports = mongoose.model('User', userSchema);
+module.exports = mongoose.model("User", userSchema);

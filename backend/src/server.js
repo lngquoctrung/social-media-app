@@ -18,7 +18,7 @@ const app = express();
 const apiPath = `/${config.app.API_PREFIX}/${config.app.API_VERSION}`;
 
 // Public router
-app.use(`${apiPath}/public`, express.static(path.join(__dirname, "public")));
+app.use(`${apiPath}/public`, express.static(path.join(__dirname, "..", "public")));
 
 // Middlewares
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -48,7 +48,7 @@ try {
         console.log(`The server name: ${config.app.APP_NAME}`);
         console.log(`Server is running on http://${config.env.HOST}:${config.env.PORT}`);
     });
-} catch (e) {
-    console.error(`Cannot start server: ${e.message}`);
+} catch (err) {
+    console.error(`Cannot start server: ${err.message}`);
     process.exit(1);
 }

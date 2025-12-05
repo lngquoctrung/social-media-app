@@ -2,7 +2,7 @@ const { body } = require("express-validator");
 
 const accessValidation = {
     signUp: [
-        body("fullName")
+        body("name")
             .notEmpty().withMessage("Full name is required"),
         body("email")
             .notEmpty().withMessage("Email is required")
