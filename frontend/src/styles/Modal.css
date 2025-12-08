@@ -1,0 +1,43 @@
+.modal__background {
+	@apply fixed inset-0 
+            bg-black bg-opacity-40 
+            flex items-center justify-center
+            z-50
+            transition-opacity duration-300 ease-in-out;
+}
+
+.modal {
+	@apply bg-white 
+            p-5 mx-10 
+            scale-95 
+            rounded-lg 
+            w-full
+            md:w-1/2
+            lg:w-1/4 
+            transform transition-all duration-300
+            relative;
+}
+
+.modal__header {
+	@apply text-3xl mb-3 md:mb-4 text-center font-bold;
+}
+
+.modal__body {
+	@apply text-center mb-3 md:mb-4;
+}
+
+.modal__footer {
+	@apply flex flex-col;
+}
+
+.modal__button--success {
+	@apply w-full py-3 mb-2 bg-green-400 rounded-xl active:bg-green-500;
+}
+
+.modal__button--info {
+	@apply w-full py-3 mb-2 bg-blue-300 rounded-xl active:bg-blue-400;
+}
+
+.modal__button--secondary {
+	@apply w-full py-3 mb-2 bg-gray-300 rounded-xl active:bg-gray-400;
+}

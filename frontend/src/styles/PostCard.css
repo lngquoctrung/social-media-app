@@ -1,0 +1,27 @@
+.post-card {
+	@apply flex flex-col md:flex-row bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 max-w-4xl mx-auto;
+}
+
+.post-card .post-card__frame {
+	@apply md:w-1/2 w-full h-48 md:h-auto relative;
+}
+
+.post-card__frame .post-card__image {
+	@apply w-full h-full object-cover;
+}
+
+.post-card__main {
+	@apply flex flex-col md:w-1/2 w-full p-1 md:p-6;
+}
+
+.post-card__header {
+	@apply flex items-center p-4 pb-2;
+}
+
+.post-card__body {
+	@apply px-6 py-3 flex-grow;
+}
+
+.post-card__footer {
+	@apply border-t border-gray-200 px-6 py-3 mt-auto;
+}

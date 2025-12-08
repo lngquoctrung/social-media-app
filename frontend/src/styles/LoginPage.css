@@ -1,0 +1,7 @@
+.login__page {
+	@apply w-full px-5 md:px-0;
+}
+
+.login__page .login-page__header {
+	@apply text-3xl text-center font-bold mt-14 mb-8 uppercase;
+}

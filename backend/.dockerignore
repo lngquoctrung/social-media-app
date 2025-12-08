@@ -1,0 +1,22 @@
+# backend/.dockerignore
+
+# Bỏ qua node_modules để tránh copy vào container, sẽ được cài từ package.json
+node_modules
+npm-debug.log
+.DS_Store
+
+# Bỏ qua file log
+*.log
+
+# Bỏ qua file cấu hình IDE/editor
+.vscode
+.idea
+
+# Bỏ qua các tệp backup và cache
+*.swp
+*.swo
+*.bak
+*.tmp
+
+# Bỏ qua file .env nếu không muốn copy vào Docker
+.env
