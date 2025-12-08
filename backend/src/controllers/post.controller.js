@@ -9,6 +9,13 @@ const getAllPosts = async (req, res) => {
 	}).send(res);
 };
 
+const uploadPostImages = async (req, res) => {
+	new Ok({
+		message: "Upload post images successfully",
+		metadata: req.files,
+	}).send(res);
+}
+
 const createPost = async (req, res) => {
 	new Ok({
 		message: "Create post successfully",
@@ -18,5 +25,6 @@ const createPost = async (req, res) => {
 
 module.exports = {
 	getAllPosts,
+	uploadPostImages,
 	createPost
 };
