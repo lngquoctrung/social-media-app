@@ -1,15 +1,12 @@
-const express = require('express');
-const verifyToken = require('../../middlewares/auth.middleware');
-const commentController = require('../../controllers/commentController');
+const express = require("express");
+const commentController = require("../../controllers/comment.controller");
+const authMiddleware = require("../../middlewares/auth.middleware");
+const asyncHandler = require("../../core/async.handler");
 
 const router = express.Router();
 
-// Routes
-router.get('/', commentController.getAllComments);
-router.get('/post/:postId', commentController.getCommentsByPostId);
-router.post('/', verifyToken, commentController.createComment);
-router.put('/:id', verifyToken, commentController.updateComment);
-router.delete('/:id', verifyToken, commentController.deleteComment);
-// router.put('/:id/like', verifyToken, commentController.toggleLikeComment);
+router.post("/", authMiddleware, asyncHandler(commentController.createComment));
+router.get("/:postId", asyncHandler(commentController.getCommentsByPost));
+router.delete("/:id", authMiddleware, asyncHandler(commentController.deleteComment));
 
 module.exports = router;

@@ -6,14 +6,16 @@ const router = express.Router();
 const accessRouter = require("./v1/access.router");
 const userRouter = require("./v1/user.router");
 const postRouter = require("./v1/post.router");
-// const commentRouter = require("./v1/comment.router");
+const commentRouter = require("./v1/comment.router");
+const likeRouter = require("./v1/like.router");
 const { Ok } = require("../core/success.response");
 
 // Define specified endpoint for each child router
 router.use("/access", accessRouter);
 router.use("/users", userRouter);
 router.use("/posts", postRouter);
-// router.use("/comments", commentRouter);
+router.use("/comments", commentRouter);
+router.use("/likes", likeRouter);
 router.get("/", (req, res) => {
     new Ok({
         message: "Welcome to the Social Media API",
