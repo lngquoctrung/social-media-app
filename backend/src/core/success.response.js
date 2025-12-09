@@ -3,12 +3,18 @@ const { StatusCodes, ReasonPhrases } = require('./https.status.code');
 class SuccessResponse {
     constructor({ message, statusCode = StatusCodes.OK, reasonStatusCode = ReasonPhrases.OK, metadata = {} }) {
         this.message = !message ? reasonStatusCode : message;
+        this.reasonStatusCode = reasonStatusCode;
         this.statusCode = statusCode;
         this.metadata = metadata;
     }
 
     send(res, header = {}) {
-        return res.status(this.statusCode).json(this);
+        return res.status(this.statusCode).json({
+            status: this.reasonStatusCode.toLowerCase(),
+            code: this.statusCode,
+            message: this.message,
+            metadata: this.metadata,
+        });
     }
 }
 

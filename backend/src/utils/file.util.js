@@ -15,7 +15,14 @@ const moveFile = (oldPath, newPath) => {
     fs.renameSync(oldPath, newPath);
 }
 
+const removeFile = (filePath) => {
+    if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+    }
+}
+
 module.exports = {
     createFolder,
     moveFile,
+    removeFile,
 };
