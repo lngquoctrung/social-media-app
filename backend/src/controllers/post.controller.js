@@ -3,7 +3,8 @@ const { Ok, Created } = require("../core/success.response");
 const { BadRequestError } = require("../core/error.response");
 
 const getAllPosts = async (req, res) => {
-	const posts = await postService.getAllPosts();
+	const userId = req.user?.userId;
+	const posts = await postService.getAllPosts(userId);
 	new Ok({
 		message: "Get all posts successfully",
 		metadata: posts,

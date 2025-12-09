@@ -1,4 +1,5 @@
 const postModel = require('../models/post.model');
+const mongoose = require('mongoose');
 const path = require("path");
 const config = require("../config");
 const { moveFile, removeFile } = require("../utils/file.util");
@@ -6,8 +7,53 @@ const { moveFile, removeFile } = require("../utils/file.util");
 const { NotFoundError, ForbiddenError } = require("../core/error.response");
 
 class PostService {
-    getAllPosts = async () => {
-        const posts = await postModel.find().lean();
+    getAllPosts = async (userId) => {
+        const pipeline = [
+            {
+                $lookup: {
+                    from: 'Likes',
+                    let: { postId: '$_id' },
+                    pipeline: [
+                        {
+                            $match: {
+                                $expr: {
+                                    $and: [
+                                        { $eq: ['$targetId', '$$postId'] },
+                                        { $eq: ['$targetType', 'Post'] }
+                                    ]
+                                }
+                            }
+                        }
+                    ],
+                    as: 'likes'
+                }
+            },
+            {
+                $addFields: {
+                    likesCount: { $size: '$likes' },
+                    isLiked: {
+                        $cond: {
+                            if: {
+                                $and: [
+                                    !!userId,
+                                    { $in: [userId ? new mongoose.Types.ObjectId(userId) : null, '$likes.user'] }
+                                ]
+                            },
+                            then: true,
+                            else: false
+                        }
+                    }
+                }
+            },
+            {
+                $project: {
+                    likes: 0
+                }
+            },
+            { $sort: { createdAt: -1 } }
+        ];
+
+        const posts = await postModel.aggregate(pipeline);
         return posts;
     }
 
