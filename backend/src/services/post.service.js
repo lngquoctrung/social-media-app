@@ -16,17 +16,15 @@ class PostService {
         const imageUrls = [];
 
         if (data?.images && data.images.length > 0) {
-            data.images.forEach(image => {
-                // Construct URL
-                const imageUrl = `${config.auth.STORAGE_URL}/${apiPrefix}/public/images/posts/${image.filename}`;
+            await Promise.all(data.images.map(async (filename) => {
+                const tempPath = path.join(config.uploader.tempFolders.post, filename);
+                const destPath = path.join(config.uploader.post.destination, filename);
+
+                const imageUrl = `${config.auth.STORAGE_URL}/${apiPrefix}/public/images/posts/${filename}`;
                 imageUrls.push(imageUrl);
 
-                // Move file
-                moveFile(
-                    path.join(config.uploader.tempFolders.post, image.filename),
-                    path.join(config.uploader.post.destination, image.filename)
-                );
-            });
+                await moveFile(tempPath, destPath);
+            }));
         }
 
         const post = await postModel.create({
@@ -40,52 +38,57 @@ class PostService {
     updatePost = async (userId, postId, data) => {
         const post = await postModel.findById(postId);
         if (!post) throw new NotFoundError({ message: "Post not found" });
-        if (post.user.toString() !== userId) throw new ForbiddenError({ message: "You are not authorized to update this post" });
+        if (post.user.toString() !== userId) throw new ForbiddenError({ message: "Unauthorized" });
 
         const apiPrefix = `${config.app.API_PREFIX}/${config.app.API_VERSION}`;
-        const newImages = data.images || []; // Contains URLs (kept) and Filenames (new)
-        const currentImages = post.images || [];
+        const incomingImages = data.images || [];
+        const currentDbImages = post.images || [];
 
-        // 1. Identify images to delete (in current but not in new)
-        const imagesToDelete = currentImages.filter(img => !newImages.includes(img));
-        imagesToDelete.forEach(imgUrl => {
-            // Extract filename from URL
-            const filename = path.basename(imgUrl);
-            removeFile(path.join(config.uploader.post.destination, filename));
-        });
+        const imagesToDelete = currentDbImages.filter(dbImg => !incomingImages.includes(dbImg));
 
-        // 2. Process new images
+        if (imagesToDelete.length > 0) {
+            imagesToDelete.forEach(imgUrl => {
+                const filename = path.basename(imgUrl);
+                removeFile(path.join(config.uploader.post.destination, filename)).catch(console.error);
+            });
+        }
+
         const finalImageUrls = [];
-        newImages.forEach(img => {
-            if (img.startsWith("http")) {
-                // Existing URL, keep it
-                finalImageUrls.push(img);
-            } else {
-                // New Filename, move it
-                const imageUrl = `${config.auth.STORAGE_URL}/${apiPrefix}/public/images/posts/${img}`;
-                finalImageUrls.push(imageUrl);
-                moveFile(
-                    path.join(config.uploader.tempFolders.post, img),
-                    path.join(config.uploader.post.destination, img)
-                );
-            }
-        });
 
-        const updatedPost = await postModel.findByIdAndUpdate(postId, { ...data, images: finalImageUrls }, { new: true });
+        for (const item of incomingImages) {
+            if (item.startsWith("http")) {
+                finalImageUrls.push(item);
+            } else {
+                const filename = item;
+                const tempPath = path.join(config.uploader.tempFolders.post, filename);
+                const destPath = path.join(config.uploader.post.destination, filename);
+
+                await moveFile(tempPath, destPath);
+
+                const newUrl = `${config.auth.STORAGE_URL}/${apiPrefix}/public/images/posts/${filename}`;
+                finalImageUrls.push(newUrl);
+            }
+        }
+
+        const updatedPost = await postModel.findByIdAndUpdate(
+            postId,
+            { ...data, images: finalImageUrls },
+            { new: true }
+        );
         return updatedPost;
     }
 
     deletePost = async (userId, postId) => {
         const post = await postModel.findById(postId);
         if (!post) throw new NotFoundError({ message: "Post not found" });
-        if (post.user.toString() !== userId) throw new ForbiddenError({ message: "You are not authorized to delete this post" });
+        if (post.user.toString() !== userId) throw new ForbiddenError({ message: "Unauthorized" });
 
         // Delete all images
         if (post.images && post.images.length > 0) {
-            post.images.forEach(imgUrl => {
+            for (const imgUrl of post.images) {
                 const filename = path.basename(imgUrl);
-                removeFile(path.join(config.uploader.post.destination, filename));
-            });
+                await removeFile(path.join(config.uploader.post.destination, filename));
+            }
         }
 
         await postModel.findByIdAndDelete(postId);

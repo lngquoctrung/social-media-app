@@ -18,7 +18,7 @@ class UserService {
         if (!user) throw new NotFoundError({ message: "User not found" });
 
         // Move file from temp to public
-        moveFile(file.path, path.join(config.uploader.avatar.destination, file.filename));
+        await moveFile(file.path, path.join(config.uploader.avatar.destination, file.filename));
 
         return user;
     }

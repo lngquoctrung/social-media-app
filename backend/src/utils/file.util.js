@@ -1,23 +1,28 @@
-const fs = require("fs");
+const fs = require("fs/promises");
 const path = require("path");
 
-const createFolder = (folderPath) => {
-    if (!fs.existsSync(folderPath)) {
-        fs.mkdirSync(folderPath, { recursive: true });
+const createFolder = async (folderPath) => {
+    try {
+        await fs.access(folderPath);
+    } catch (error) {
+        await fs.mkdir(folderPath, { recursive: true });
     }
 }
 
-const moveFile = (oldPath, newPath) => {
+const moveFile = async (oldPath, newPath) => {
     // Ensure destination folder exists
     const dirname = path.dirname(newPath);
-    createFolder(dirname);
+    await createFolder(dirname);
 
-    fs.renameSync(oldPath, newPath);
+    await fs.rename(oldPath, newPath);
 }
 
-const removeFile = (filePath) => {
-    if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
+const removeFile = async (filePath) => {
+    try {
+        await fs.access(filePath);
+        await fs.unlink(filePath);
+    } catch (error) {
+        console.log(error);
     }
 }
 

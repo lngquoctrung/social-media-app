@@ -1,18 +1,19 @@
 const multer = require("multer");
 const path = require("path");
+const crypto = require("crypto");
 const config = require("../config");
 const { createFolder } = require("../utils/file.util");
 const { BadRequestError } = require("../core/error.response");
 
 const storage = multer.diskStorage({
-	destination: (req, file, cb) => {
+	destination: async (req, file, cb) => {
 		// Create temporary folder
-		createFolder(config.uploader.tempFolders.avatar);
-		createFolder(config.uploader.tempFolders.post);
+		await createFolder(config.uploader.tempFolders.avatar);
+		await createFolder(config.uploader.tempFolders.post);
 
 		// Create main folder if not exist
-		createFolder(config.uploader.avatar.destination);
-		createFolder(config.uploader.post.destination);
+		await createFolder(config.uploader.avatar.destination);
+		await createFolder(config.uploader.post.destination);
 
 		if (file.fieldname === "avatar-image") {
 			cb(null, config.uploader.tempFolders.avatar);
@@ -24,8 +25,10 @@ const storage = multer.diskStorage({
 	filename: (req, file, cb) => {
 		const userId = req.user?.userId;
 		const timestamp = Date.now();
+		const randomStr = crypto.randomBytes(4).toString('hex');
 		const ext = path.extname(file.originalname);
-		cb(null, `${userId}-${timestamp}-${file.fieldname}${ext}`);
+
+		cb(null, `${userId}-${timestamp}-${randomStr}-${file.fieldname}${ext}`);
 	}
 });
 

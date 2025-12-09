@@ -9,14 +9,14 @@ const router = express.Router();
 router.get("/",
     asyncHandler(postController.getAllPosts)
 );
-router.post("/",
-    authMiddleware,
-    asyncHandler(postController.createPost)
-);
 router.post("/upload-images",
     authMiddleware,
     uploaderMiddleware.uploadPostImages,
     asyncHandler(postController.uploadPostImages)
+);
+router.post("/",
+    authMiddleware,
+    asyncHandler(postController.createPost)
 );
 router.put("/:id",
     authMiddleware,

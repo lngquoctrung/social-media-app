@@ -16,7 +16,7 @@ const uploadPostImages = async (req, res) => {
 	}
 	new Created({
 		message: "Upload post images successfully",
-		metadata: req.files,
+		metadata: req.files.map(f => f.filename),
 	}).send(res);
 }
 
