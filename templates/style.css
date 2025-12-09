@@ -1,0 +1,99 @@
+body {
+    font-family: sans-serif;
+    margin: 0;
+    padding: 20px;
+    background: #f0f2f5;
+}
+
+.container {
+    max-width: 600px;
+    margin: 0 auto;
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+input,
+textarea,
+button {
+    width: 100%;
+    padding: 10px;
+    box-sizing: border-box;
+    margin-top: 5px;
+}
+
+button {
+    background: #1877f2;
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+button:hover {
+    background: #166fe5;
+}
+
+.post {
+    border: 1px solid #ddd;
+    padding: 15px;
+    margin-bottom: 15px;
+    border-radius: 8px;
+}
+
+.post-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #ddd;
+    margin-right: 10px;
+    object-fit: cover;
+}
+
+.post-images img {
+    max-width: 100%;
+    margin-top: 10px;
+    border-radius: 8px;
+}
+
+.actions {
+    margin-top: 10px;
+    display: flex;
+    gap: 15px;
+    border-top: 1px solid #eee;
+    padding-top: 10px;
+}
+
+.comment-section {
+    margin-top: 10px;
+    background: #f9f9f9;
+    padding: 10px;
+    border-radius: 8px;
+}
+
+.comment {
+    margin-bottom: 10px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 5px;
+}
+
+.reply-indent {
+    margin-left: 20px;
+    border-left: 2px solid #ddd;
+    padding-left: 10px;
+}
+
+.hidden {
+    display: none;
+}
