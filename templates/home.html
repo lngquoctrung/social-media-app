@@ -59,12 +59,21 @@
         </div>
 
         <script>
-            // Check Auth
-            auth.checkAuth();
+            // Check Auth (Optional)
+            const token = auth.getToken();
             const currentUser = auth.getUser();
-            document.getElementById(
-                "welcome-msg"
-            ).textContent = `Welcome, ${currentUser.name}`;
+            const welcomeMsg = document.getElementById("welcome-msg");
+
+            if (currentUser) {
+                welcomeMsg.textContent = `Welcome, ${currentUser.name}`;
+            } else {
+                welcomeMsg.innerHTML = 'Guest | <a href="index.html">Login</a>';
+                // Hide logout button if guest? Or change text?
+                // Let's just replacing logout with login link above and hiding the button next to it
+                document.querySelector(
+                    'button[onclick="auth.logout()"]'
+                ).style.display = "none";
+            }
 
             // --- Post Logic ---
             async function createPost() {
@@ -140,6 +149,7 @@
                 // Placeholder for complex element creation
                 const div = document.createElement("div");
                 div.className = "post";
+                const currentUserId = auth.getUserId();
 
                 // Images HTML
                 let imagesHtml = "";
@@ -153,9 +163,16 @@
 
                 // Delete Button (if owner)
                 let deleteBtn = "";
-                if (post.user === auth.getUserId()) {
+                if (currentUserId && post.user === currentUserId) {
                     deleteBtn = `<button onclick="deletePost('${post._id}')" style="width:auto; background:red; margin-left:10px;">Delete</button>`;
                 }
+
+                // Like Button State
+                const likesCount = post.likesCount || 0;
+                const isLiked = post.isLiked || false;
+                const likeBtnText = isLiked ? "Unlike" : "Like";
+                const likeBtnColor = isLiked ? "#1877f2" : "#ccc";
+                const likeBtnColorText = isLiked ? "white" : "black";
 
                 div.innerHTML = `
                 <div class="post-header">
@@ -164,7 +181,7 @@
                 <div class="post-content">${post.content}</div>
                 ${imagesHtml}
                 <div class="actions">
-                    <button onclick="toggleLike('${post._id}', 'Post', this)">Like</button>
+                    <button onclick="toggleLike('${post._id}', 'Post', this)" style="background-color: ${likeBtnColor}; color: ${likeBtnColorText}">${likeBtnText} (${likesCount})</button>
                     <button onclick="toggleComments('${post._id}')">Comments</button>
                     ${deleteBtn}
                 </div>
@@ -194,6 +211,10 @@
 
             // --- Like Logic ---
             async function toggleLike(targetId, targetType, btn) {
+                if (!auth.getToken()) {
+                    alert("Please login to like users posts");
+                    return;
+                }
                 try {
                     const res = await api.post("/likes/toggle", {
                         targetId,
@@ -201,8 +222,24 @@
                     });
                     if (res.code === 200) {
                         const liked = res.metadata.liked;
-                        btn.textContent = liked ? "Unlike" : "Like";
-                        btn.style.background = liked ? "#1877f2" : "#ccc"; // Visual feedback
+                        // Update UI
+                        // Improve: Ideally we should use the count returned from backend or increment/decrement locally
+                        // But backend toggle endpoint currently returns { liked: boolean }
+                        // So let's just parse current text to update count
+                        const text = btn.textContent; // "Like (5)" or "Unlike (6)"
+                        let count = parseInt(text.match(/\d+/)[0]);
+
+                        if (liked) {
+                            count++;
+                            btn.textContent = `Unlike (${count})`;
+                            btn.style.backgroundColor = "#1877f2";
+                            btn.style.color = "white";
+                        } else {
+                            count--;
+                            btn.textContent = `Like (${count})`;
+                            btn.style.backgroundColor = "#ccc";
+                            btn.style.color = "black";
+                        }
                     }
                 } catch (e) {
                     console.error(e);

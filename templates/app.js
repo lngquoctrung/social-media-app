@@ -23,18 +23,21 @@ const auth = {
 const api = {
     get: async (endpoint) => {
         const token = auth.getToken();
+        const headers = {};
+        if (token) {
+            headers["Authorization"] = `Bearer ${token}`;
+        }
         const res = await fetch(`${API_BASE_URL}${endpoint}`, {
-            headers: {
-                "Authorization": `Bearer ${token}`
-            }
+            headers
         });
         return res.json();
     },
     post: async (endpoint, body) => {
         const token = auth.getToken();
-        const headers = {
-            "Authorization": `Bearer ${token}`
-        };
+        const headers = {};
+        if (token) {
+            headers["Authorization"] = `Bearer ${token}`;
+        }
         if (!(body instanceof FormData)) {
             headers["Content-Type"] = "application/json";
             body = JSON.stringify(body);
@@ -48,9 +51,10 @@ const api = {
     },
     put: async (endpoint, body) => {
         const token = auth.getToken();
-        const headers = {
-            "Authorization": `Bearer ${token}`
-        };
+        const headers = {};
+        if (token) {
+            headers["Authorization"] = `Bearer ${token}`;
+        }
         if (!(body instanceof FormData)) {
             headers["Content-Type"] = "application/json";
             body = JSON.stringify(body);
@@ -64,11 +68,13 @@ const api = {
     },
     delete: async (endpoint) => {
         const token = auth.getToken();
+        const headers = {};
+        if (token) {
+            headers["Authorization"] = `Bearer ${token}`;
+        }
         const res = await fetch(`${API_BASE_URL}${endpoint}`, {
             method: "DELETE",
-            headers: {
-                "Authorization": `Bearer ${token}`
-            }
+            headers
         });
         return res.json();
     }
