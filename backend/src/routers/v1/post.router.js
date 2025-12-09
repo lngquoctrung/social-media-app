@@ -1,14 +1,13 @@
 const express = require("express");
 const postController = require("../../controllers/post.controller");
 const authMiddleware = require("../../middlewares/auth.middleware");
-const optionalAuthMiddleware = require("../../middlewares/optional.auth.middleware");
 const uploaderMiddleware = require("../../middlewares/uploader.middleware");
 const asyncHandler = require("../../core/async.handler");
 
 const router = express.Router();
 
 router.get("/",
-    optionalAuthMiddleware,
+    authMiddleware.optional,
     asyncHandler(postController.getAllPosts)
 );
 router.post("/upload-images",
