@@ -4,6 +4,7 @@ backend/keys
 data/
 database/
 public/
+temp/
 
 README.txt
 .env
