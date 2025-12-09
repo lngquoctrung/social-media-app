@@ -7,6 +7,6 @@ const router = express.Router();
 
 router.get("/", postController.getAllPosts);
 router.post("/", authMiddleware, postController.createPost);
-router.post("/upload-images", authMiddleware, uploaderMiddleware.uploadPostImages, postController.uploadPostImages);
+router.post("/post-images", authMiddleware, uploaderMiddleware.uploadPostImages, postController.uploadPostImages);
 
 module.exports = router;

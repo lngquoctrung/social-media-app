@@ -1,4 +1,7 @@
 const postModel = require('../models/post.model');
+const path = require("path");
+const config = require("../config");
+const { moveFile } = require("../utils/file.util");
 
 class PostService {
     getAllPosts = async () => {
@@ -6,8 +9,19 @@ class PostService {
         return posts;
     }
 
-    createPost = async (post) => {
+    createPost = async (userId, data) => {
+        const post = await postModel.create({ ...data, user: userId });
 
+        if (data.images && data.images.length > 0) {
+            data.images.forEach(image => {
+                moveFile(
+                    path.join(config.uploader.tempFolders.post, image),
+                    path.join(config.uploader.post.destination, image)
+                );
+            });
+        }
+
+        return post;
     }
 }
 

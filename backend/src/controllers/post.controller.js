@@ -17,9 +17,11 @@ const uploadPostImages = async (req, res) => {
 }
 
 const createPost = async (req, res) => {
+	const { userId } = req.user;
+	const post = await postService.createPost(userId, req.body);
 	new Ok({
 		message: "Create post successfully",
-		metadata: req.files,
+		metadata: post,
 	}).send(res);
 }
 

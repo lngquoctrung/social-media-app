@@ -7,7 +7,7 @@ const { hashPassword, comparePassword } = require("../utils/password.util");
 const { signToken, verifyToken } = require("../utils/jwt.util");
 
 class AccessService {
-    signUp = async ({ name, email, password }) => {
+    signUp = async ({ name, email, password, birthday, gender }) => {
         // Check user exist or not
         const holderUser = await userModel.findOne({ email }).lean();
         if (holderUser) {
@@ -19,7 +19,7 @@ class AccessService {
 
         // Create new user
         const newUser = await userModel.create({
-            name, email, password: hashedPassword
+            name, email, password: hashedPassword, birthday, gender
         });
 
         if (newUser) {
@@ -42,6 +42,7 @@ class AccessService {
                         _id: newUser._id,
                         name: newUser.name,
                         email: newUser.email,
+                        avatar: newUser.avatar,
                         role: newUser.role
                     },
                     accessToken,
@@ -112,7 +113,7 @@ class AccessService {
 
         // Token never has used
         const holderToken = await tokenService.findByRefreshToken(refreshToken);
-        if (!holderToken) throw new AuthFailureError({ message: "Token is not found " });
+        if (!holderToken) throw new AuthFailureError({ message: "Token is not found" });
 
         // Verify token
         const { email } = await verifyToken(refreshToken);

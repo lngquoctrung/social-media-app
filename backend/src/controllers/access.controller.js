@@ -4,10 +4,10 @@ const config = require("../config");
 
 const signUp = async (req, res) => {
     // Get user info from request body
-    const { name, email, password } = req.body;
+    const { name, email, password, birthday, gender } = req.body;
 
     // Handle signup
-    const { code, metadata } = await accessService.signUp({ name, email, password });
+    const { code, metadata } = await accessService.signUp({ name, email, password, birthday, gender });
 
     // Set tokens to cookie
     res.cookie("accessToken", metadata.accessToken, config.cookie.access);

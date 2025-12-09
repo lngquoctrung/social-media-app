@@ -10,6 +10,15 @@ const getProfile = async (req, res) => {
 	}).send(res);
 };
 
+const uploadAvatarImage = async (req, res) => {
+	const { userId } = req.user;
+	const user = await userService.uploadAvatarImage(userId, req.file);
+	new Ok({
+		message: "Upload avatar image successfully",
+		metadata: user,
+	}).send(res);
+};
+
 const updateProfile = async (req, res) => {
 	const { userId } = req.user;
 	const user = await userService.updateProfile(userId, req.body);
@@ -21,5 +30,6 @@ const updateProfile = async (req, res) => {
 
 module.exports = {
 	getProfile,
+	uploadAvatarImage,
 	updateProfile,
 };

@@ -6,22 +6,26 @@ const { BadRequestError } = require("../core/error.response");
 
 const storage = multer.diskStorage({
 	destination: (req, file, cb) => {
-		// Create folder if not exist
+		// Create temporary folder
+		createFolder(config.uploader.tempFolders.avatar);
+		createFolder(config.uploader.tempFolders.post);
+
+		// Create main folder if not exist
 		createFolder(config.uploader.avatar.destination);
 		createFolder(config.uploader.post.destination);
 
 		if (file.fieldname === "avatar-image") {
-			cb(null, config.uploader.avatar.destination);
+			cb(null, config.uploader.tempFolders.avatar);
 		}
 		else if (file.fieldname === "post-images") {
-			cb(null, config.uploader.post.destination);
+			cb(null, config.uploader.tempFolders.post);
 		}
 	},
 	filename: (req, file, cb) => {
 		const userId = req.user?.userId;
 		const timestamp = Date.now();
 		const ext = path.extname(file.originalname);
-		cb(null, `${userId}-${timestamp}-${file.fieldname}${ext}`)
+		cb(null, `${userId}-${timestamp}-${file.fieldname}${ext}`);
 	}
 });
 
