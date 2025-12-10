@@ -4,9 +4,8 @@ import {
     FaHeart,
     FaRegHeart,
     FaRegComment,
-    FaBookmark,
-    FaRegBookmark,
     FaShare,
+    FaEllipsisH,
 } from "react-icons/fa";
 import { useAuth } from "../../context/AuthContext";
 import api from "../../api/axios";
@@ -18,10 +17,9 @@ export const PostCard = ({ post }) => {
     const [isLiked, setIsLiked] = useState(post.isLiked || false);
     const [likesCount, setLikesCount] = useState(post.likesCount || 0);
     const [isAnimating, setIsAnimating] = useState(false);
-    const [isSaved, setIsSaved] = useState(false);
 
     const handleLike = async (e) => {
-        e?.preventDefault();
+        e?.stopPropagation(); // Prevent navigation when clicking like
         if (!user) {
             navigate("/login");
             return;
@@ -45,15 +43,18 @@ export const PostCard = ({ post }) => {
         }
     };
 
+    const goToDetail = () => {
+        navigate(`/post/${post._id}`);
+    };
+
     const formatTime = (dateString) => {
         const date = new Date(dateString);
         const now = new Date();
         const diff = Math.floor((now - date) / 1000);
 
         if (diff < 60) return "Just now";
-        if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-        if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-        if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
+        if (diff < 3600) return `${Math.floor(diff / 60)} m`;
+        if (diff < 86400) return `${Math.floor(diff / 3600)} h`;
         return date.toLocaleDateString("en-US", {
             month: "short",
             day: "numeric",
@@ -61,130 +62,109 @@ export const PostCard = ({ post }) => {
     };
 
     return (
-        <article className="card overflow-hidden animate-fadeIn hover-lift">
+        <div className="card-glass mb-6 overflow-hidden rounded-2xl border border-[#3a3a4a] bg-[#22222e]">
             {/* Header */}
-            <div className="flex items-center gap-3 p-4">
-                <Link
-                    to={`/profile/${post.user?._id}`}
-                    className="avatar-ring"
-                >
-                    <img
-                        src={
-                            post.user?.avatar ||
-                            `https://ui-avatars.com/api/?name=${
-                                post.user?.name || "U"
-                            }&background=6366f1&color=fff`
-                        }
-                        alt={post.user?.name}
-                        className="h-10 w-10 rounded-full object-cover"
-                    />
-                </Link>
-                <div className="flex-1">
+            <div className="flex items-center justify-between p-4">
+                <div className="flex items-center gap-3">
                     <Link
                         to={`/profile/${post.user?._id}`}
-                        className="block text-sm font-semibold text-white hover:text-[#a855f7]"
+                        className="avatar-ring"
                     >
-                        {post.user?.name || "Unknown"}
+                        <img
+                            src={
+                                post.user?.avatar ||
+                                `https://ui-avatars.com/api/?name=${
+                                    post.user?.name || "U"
+                                }&background=random`
+                            }
+                            alt={post.user?.name}
+                            className="h-10 w-10 rounded-full object-cover"
+                        />
                     </Link>
-                    <span className="text-xs text-[#6a6a7a]">
-                        {formatTime(post.createdAt)}
-                    </span>
+                    <div>
+                        <Link
+                            to={`/profile/${post.user?._id}`}
+                            className="block font-semibold text-white hover:text-[#a855f7]"
+                        >
+                            {post.user?.name || "Unknown User"}
+                        </Link>
+                        <span className="text-xs text-[#6a6a7a]">
+                            {formatTime(post.createdAt)}
+                        </span>
+                    </div>
                 </div>
+                <button className="text-[#6a6a7a] hover:text-white">
+                    <FaEllipsisH />
+                </button>
             </div>
+
+            {/* Content Text */}
+            {post.content && (
+                <div className="px-4 pb-3">
+                    <p className="text-base text-[#e4e4e7]">{post.content}</p>
+                </div>
+            )}
 
             {/* Image */}
             {post.images && post.images.length > 0 && (
-                <Link
-                    to={`/post/${post._id}`}
-                    className="block"
-                    onDoubleClick={() => !isLiked && user && handleLike()}
+                <div
+                    onClick={goToDetail}
+                    className="relative w-full cursor-pointer bg-[#1a1a24] hover:opacity-95 active:opacity-90"
                 >
-                    <div className="relative aspect-[4/3] w-full overflow-hidden bg-[#1a1a24]">
-                        <img
-                            src={post.images[0]}
-                            alt="Post"
-                            className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
-                            loading="lazy"
-                        />
-                        {isAnimating && isLiked && (
-                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                <FaHeart className="h-20 w-20 text-pink-500 animate-like drop-shadow-lg" />
-                            </div>
-                        )}
-                    </div>
-                </Link>
+                    <img
+                        src={post.images[0]}
+                        alt="Post content"
+                        className="w-full object-cover"
+                        style={{ maxHeight: "600px", minHeight: "300px" }}
+                        loading="lazy"
+                    />
+                    {isAnimating && (
+                        <div className="absolute inset-0 flex items-center justify-center animate-like">
+                            <FaHeart className="h-24 w-24 text-white drop-shadow-xl" />
+                        </div>
+                    )}
+                </div>
             )}
 
-            {/* Content & Actions */}
-            <div className="p-4">
-                {/* Actions Row */}
-                <div className="mb-3 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
+            {/* Footer Actions */}
+            <div className="px-4 py-3">
+                <div className="flex items-center justify-between border-t border-[#3a3a4a] pt-3">
+                    <div className="flex gap-6">
                         <button
                             onClick={handleLike}
-                            className={`transition-transform hover:scale-110 ${
-                                isAnimating ? "animate-like" : ""
+                            className={`flex items-center gap-2 text-sm font-medium transition-colors ${
+                                isLiked
+                                    ? "text-pink-500"
+                                    : "text-[#b8b8c8] hover:text-white"
                             }`}
                         >
                             {isLiked ? (
-                                <FaHeart className="h-6 w-6 text-pink-500" />
+                                <FaHeart className="text-lg" />
                             ) : (
-                                <FaRegHeart className="h-6 w-6 text-[#b8b8c8] hover:text-white" />
+                                <FaRegHeart className="text-lg" />
                             )}
+                            <span>{likesCount > 0 ? likesCount : "Like"}</span>
                         </button>
+
                         <Link
                             to={`/post/${post._id}`}
-                            className="text-[#b8b8c8] hover:text-white"
+                            className="flex items-center gap-2 text-sm font-medium text-[#b8b8c8] transition-colors hover:text-white"
                         >
-                            <FaRegComment className="h-6 w-6" />
+                            <FaRegComment className="text-lg" />
+                            <span>
+                                {post.commentsCount > 0
+                                    ? post.commentsCount
+                                    : "Comment"}
+                            </span>
                         </Link>
-                        <button className="text-[#b8b8c8] hover:text-white">
-                            <FaShare className="h-5 w-5" />
+
+                        <button className="flex items-center gap-2 text-sm font-medium text-[#b8b8c8] transition-colors hover:text-white">
+                            <FaShare className="text-lg" />
+                            <span>Share</span>
                         </button>
                     </div>
-                    <button
-                        onClick={() => setIsSaved(!isSaved)}
-                        className="text-[#b8b8c8] hover:text-white"
-                    >
-                        {isSaved ? (
-                            <FaBookmark className="h-5 w-5 text-purple-400" />
-                        ) : (
-                            <FaRegBookmark className="h-5 w-5" />
-                        )}
-                    </button>
                 </div>
-
-                {/* Likes */}
-                <p className="mb-2 text-sm font-semibold text-white">
-                    {likesCount.toLocaleString()}{" "}
-                    {likesCount === 1 ? "like" : "likes"}
-                </p>
-
-                {/* Caption */}
-                {post.content && (
-                    <p className="text-sm text-[#b8b8c8]">
-                        <Link
-                            to={`/profile/${post.user?._id}`}
-                            className="mr-2 font-semibold text-white hover:text-[#a855f7]"
-                        >
-                            {post.user?.name}
-                        </Link>
-                        {post.content.length > 100
-                            ? `${post.content.slice(0, 100)}...`
-                            : post.content}
-                    </p>
-                )}
-
-                {/* Comments link */}
-                {post.commentsCount > 0 && (
-                    <Link
-                        to={`/post/${post._id}`}
-                        className="mt-2 block text-sm text-[#6a6a7a] hover:text-[#b8b8c8]"
-                    >
-                        View all {post.commentsCount} comments
-                    </Link>
-                )}
             </div>
-        </article>
+        </div>
     );
 };

@@ -15,6 +15,7 @@ export const API_ENDPOINTS = {
     },
     USERS: {
         ME: '/api/v1/users/me',
+        GET_ONE: (id) => `/api/v1/users/${id}`,
         UPDATE_PROFILE: '/api/v1/users/me',
         UPLOAD_AVATAR: '/api/v1/users/me/avatar',
     },

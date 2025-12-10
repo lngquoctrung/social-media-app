@@ -21,6 +21,10 @@ const apiPath = `/${config.app.API_PREFIX}/${config.app.API_VERSION}`;
 app.use(`${apiPath}/public`, express.static(path.join(__dirname, "..", "public")));
 
 // Middlewares
+app.use((req, res, next) => {
+    console.log(`[REQUEST] ${req.method} ${req.url}`);
+    next();
+});
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(cookieParser());

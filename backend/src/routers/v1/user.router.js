@@ -23,4 +23,9 @@ router.put("/me/avatar",
     asyncHandler(userController.uploadAvatarImage)
 );
 
+router.get("/:id",
+    // authMiddleware, // access control can be added later
+    asyncHandler(userController.getUserById)
+);
+
 module.exports = router;

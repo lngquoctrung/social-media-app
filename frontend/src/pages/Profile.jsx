@@ -1,263 +1,304 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { FaCog, FaThLarge, FaBookmark, FaCamera } from "react-icons/fa";
+import { useAuth } from "../context/AuthContext";
 import api from "../api/axios";
 import { API_ENDPOINTS } from "../api/endpoints";
-import { useAuth } from "../context/AuthContext";
+import { PostCard } from "../components/post/PostCard";
+import {
+    FaMapMarkerAlt,
+    FaBriefcase,
+    FaGraduationCap,
+    FaEdit,
+    FaCamera,
+    FaEnvelope,
+} from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 
 export const Profile = () => {
     const { id } = useParams();
-    const { user: currentUser, updateUser } = useAuth();
-    const [profileUser, setProfileUser] = useState(null);
+    const navigate = useNavigate();
+    const { user: currentUser } = useAuth();
+    const [user, setUser] = useState(null);
     const [posts, setPosts] = useState([]);
+    const [photos, setPhotos] = useState([]);
+    const [activeTab, setActiveTab] = useState("posts");
     const [loading, setLoading] = useState(true);
-    const [isEditing, setIsEditing] = useState(false);
-    const [editName, setEditName] = useState("");
-    const avatarInputRef = useRef(null);
 
     const isOwnProfile = currentUser?._id === id;
 
     useEffect(() => {
-        fetchProfile();
+        fetchProfileData();
     }, [id]);
 
-    const fetchProfile = async () => {
+    const fetchProfileData = async () => {
         try {
-            if (isOwnProfile && currentUser) {
-                setProfileUser(currentUser);
-                setEditName(currentUser.name || "");
-            }
+            const [userRes, postsRes] = await Promise.all([
+                api.get(API_ENDPOINTS.USERS.GET_ONE(id)),
+                api.get(`${API_ENDPOINTS.POSTS.LIST}?userId=${id}`),
+            ]);
+            setUser(userRes.data.metadata);
 
-            const postsRes = await api.get(API_ENDPOINTS.POSTS.LIST);
-            const allPosts = postsRes.data.metadata || [];
-            const userPosts = allPosts.filter((p) => p.user?._id === id);
-            setPosts(userPosts);
+            const fetchedPosts = postsRes.data.metadata || [];
+            setPosts(fetchedPosts);
 
-            if (!isOwnProfile && userPosts.length > 0) {
-                setProfileUser(userPosts[0].user);
-            }
+            // Extract images from posts
+            const allImages = fetchedPosts.reduce((acc, post) => {
+                if (post.images && post.images.length > 0) {
+                    return [...acc, ...post.images];
+                }
+                return acc;
+            }, []);
+            setPhotos(allImages);
         } catch (error) {
-            console.error("Failed to load", error);
+            console.error(error);
         } finally {
             setLoading(false);
         }
     };
 
-    const handleUpdateProfile = async () => {
-        try {
-            await api.put(API_ENDPOINTS.USERS.UPDATE_PROFILE, {
-                name: editName,
-            });
-            setProfileUser((prev) => ({ ...prev, name: editName }));
-            if (updateUser) updateUser({ name: editName });
-            setIsEditing(false);
-        } catch (error) {
-            console.error("Failed to update", error);
-        }
-    };
-
-    const handleAvatarChange = async (e) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
-        const formData = new FormData();
-        formData.append("avatar", file);
-
-        try {
-            const res = await api.put(
-                API_ENDPOINTS.USERS.UPLOAD_AVATAR,
-                formData,
-                {
-                    headers: { "Content-Type": "multipart/form-data" },
-                }
-            );
-            const newAvatar = res.data.metadata.avatar;
-            setProfileUser((prev) => ({ ...prev, avatar: newAvatar }));
-            if (updateUser) updateUser({ avatar: newAvatar });
-        } catch (error) {
-            console.error("Failed to upload avatar", error);
-        }
-    };
-
-    if (loading) {
+    if (loading)
         return (
-            <div className="flex min-h-[60vh] items-center justify-center">
+            <div className="flex h-screen items-center justify-center">
                 <div className="loader"></div>
             </div>
         );
-    }
-
-    if (!profileUser) {
-        return (
-            <div className="flex min-h-[60vh] items-center justify-center">
-                <p className="text-[#ef4444]">User not found</p>
-            </div>
-        );
-    }
+    if (!user)
+        return <div className="text-center p-8 text-white">User not found</div>;
 
     return (
-        <div className="mx-auto max-w-4xl px-4 py-8 pb-24 md:pb-8">
-            {/* Profile Header */}
-            <header className="mb-10 flex flex-col items-center gap-8 md:flex-row md:items-start">
-                {/* Avatar */}
-                <div className="relative">
-                    <div className="avatar-ring p-1">
-                        <img
-                            src={
-                                profileUser.avatar ||
-                                `https://ui-avatars.com/api/?name=${profileUser.name}&size=150&background=6366f1&color=fff`
-                            }
-                            alt={profileUser.name}
-                            className="h-32 w-32 rounded-full object-cover md:h-40 md:w-40"
-                        />
-                    </div>
-                    {isOwnProfile && (
-                        <>
-                            <input
-                                type="file"
-                                ref={avatarInputRef}
-                                accept="image/*"
-                                onChange={handleAvatarChange}
-                                className="hidden"
-                            />
-                            <button
-                                onClick={() => avatarInputRef.current?.click()}
-                                className="absolute bottom-2 right-2 flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg"
-                            >
-                                <FaCamera className="h-4 w-4" />
+        <div className="min-h-screen bg-[#0f0f14] pb-20">
+            {/* Header Section */}
+            <div className="bg-[#1a1a24] shadow-md mb-6">
+                <div className="mx-auto max-w-5xl">
+                    {/* Cover Photo */}
+                    <div className="relative h-[250px] w-full bg-linear-to-r from-violet-600 via-purple-600 to-indigo-600 rounded-b-xl">
+                        {isOwnProfile && (
+                            <button className="absolute bottom-4 right-4 flex items-center gap-2 rounded-lg bg-black/40 px-3 py-1.5 text-sm font-medium text-white backdrop-blur-md hover:bg-black/60 transition-all">
+                                <FaCamera /> Edit Cover
                             </button>
-                        </>
-                    )}
-                </div>
-
-                {/* Info */}
-                <div className="flex-1 text-center md:text-left">
-                    <div className="mb-4 flex flex-col items-center gap-4 md:flex-row">
-                        {isEditing ? (
-                            <div className="flex items-center gap-2">
-                                <input
-                                    type="text"
-                                    value={editName}
-                                    onChange={(e) =>
-                                        setEditName(e.target.value)
-                                    }
-                                    className="input-field w-48"
-                                />
-                                <button
-                                    onClick={handleUpdateProfile}
-                                    className="btn-primary text-sm py-2"
-                                >
-                                    Save
-                                </button>
-                                <button
-                                    onClick={() => setIsEditing(false)}
-                                    className="text-sm text-[#6a6a7a]"
-                                >
-                                    Cancel
-                                </button>
-                            </div>
-                        ) : (
-                            <>
-                                <h1 className="text-2xl font-semibold text-white">
-                                    {profileUser.name}
-                                </h1>
-                                {isOwnProfile && (
-                                    <div className="flex gap-2">
-                                        <button
-                                            onClick={() => setIsEditing(true)}
-                                            className="btn-secondary text-sm"
-                                        >
-                                            Edit Profile
-                                        </button>
-                                        <button className="rounded-lg p-2 text-[#b8b8c8] hover:bg-[#2a2a38]">
-                                            <FaCog className="h-5 w-5" />
-                                        </button>
-                                    </div>
-                                )}
-                            </>
                         )}
                     </div>
 
-                    {/* Stats */}
-                    <div className="mb-4 flex justify-center gap-10 md:justify-start">
-                        <div className="text-center md:text-left">
-                            <span className="font-bold text-white">
-                                {posts.length}
-                            </span>
-                            <span className="ml-1 text-[#b8b8c8]">posts</span>
+                    {/* Profile Info Bar */}
+                    <div className="px-4 pb-4">
+                        <div className="relative flex flex-col md:flex-row md:items-end md:gap-6">
+                            {/* Avatar */}
+                            <div className="-mt-12 mb-4 flex justify-center md:mb-0 md:justify-start">
+                                <div className="relative h-32 w-32 md:h-40 md:w-40 rounded-full border-4 border-[#1a1a24] bg-[#22222e]">
+                                    <img
+                                        src={
+                                            user.avatar ||
+                                            `https://ui-avatars.com/api/?name=${user.name}&background=6366f1&color=fff`
+                                        }
+                                        alt={user.name}
+                                        className="h-full w-full rounded-full object-cover"
+                                    />
+                                    {isOwnProfile && (
+                                        <button className="absolute bottom-2 right-2 rounded-full bg-[#1a1a24] p-2 text-white hover:bg-[#3f3f46]">
+                                            <FaCamera className="h-4 w-4" />
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Name & Basic Info */}
+                            <div className="flex-1 text-center md:mb-4 md:text-left">
+                                <h1 className="text-2xl md:text-3xl font-bold text-white">
+                                    {user.name}
+                                </h1>
+                                <p className="text-gray-400 font-medium">
+                                    @
+                                    {user.email?.split("@")[0] ||
+                                        user.name
+                                            .toLowerCase()
+                                            .replace(/\s/g, "")}
+                                </p>
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className="flex justify-center gap-3 mb-4 md:mb-6">
+                                {isOwnProfile ? (
+                                    <button className="flex items-center gap-2 rounded-lg bg-[#3f3f46] px-4 py-2 font-semibold text-white hover:bg-[#52525b] transition-colors">
+                                        <FaEdit /> Edit Profile
+                                    </button>
+                                ) : (
+                                    <>
+                                        <button
+                                            onClick={() =>
+                                                currentUser
+                                                    ? null
+                                                    : navigate("/login")
+                                            }
+                                            className="rounded-lg bg-[#6366f1] px-6 py-2 font-semibold text-white hover:bg-[#4f46e5] transition-colors"
+                                        >
+                                            Follow
+                                        </button>
+                                        <button
+                                            onClick={() =>
+                                                currentUser
+                                                    ? null
+                                                    : navigate("/login")
+                                            }
+                                            className="rounded-lg bg-[#3f3f46] px-4 py-2 font-semibold text-white hover:bg-[#52525b] transition-colors"
+                                        >
+                                            Message
+                                        </button>
+                                    </>
+                                )}
+                            </div>
                         </div>
-                        <div className="text-center md:text-left">
-                            <span className="font-bold text-white">0</span>
-                            <span className="ml-1 text-[#b8b8c8]">
-                                followers
-                            </span>
-                        </div>
-                        <div className="text-center md:text-left">
-                            <span className="font-bold text-white">0</span>
-                            <span className="ml-1 text-[#b8b8c8]">
-                                following
-                            </span>
+
+                        {/* Divider */}
+                        <div className="mt-2 h-px w-full bg-[#3a3a4a]"></div>
+
+                        {/* Tabs */}
+                        <div className="flex justify-center gap-8 md:justify-start pt-1">
+                            {["Posts", "About", "Friends", "Photos"].map(
+                                (tab) => (
+                                    <button
+                                        key={tab}
+                                        onClick={() =>
+                                            setActiveTab(tab.toLowerCase())
+                                        }
+                                        className={`py-3 text-sm font-semibold border-b-2 transition-colors ${
+                                            activeTab === tab.toLowerCase()
+                                                ? "border-[#a855f7] text-[#a855f7]"
+                                                : "border-transparent text-[#b8b8c8] hover:text-white"
+                                        }`}
+                                    >
+                                        {tab}
+                                    </button>
+                                )
+                            )}
                         </div>
                     </div>
-
-                    <p className="font-semibold text-white">
-                        {profileUser.name}
-                    </p>
-                    {profileUser.bio && (
-                        <p className="text-[#b8b8c8]">{profileUser.bio}</p>
-                    )}
                 </div>
-            </header>
-
-            {/* Tabs */}
-            <div className="mb-6 flex justify-center border-t border-[#3a3a4a]">
-                <button className="flex items-center gap-2 border-t-2 border-[#a855f7] px-6 py-4 text-sm font-semibold uppercase tracking-wider text-white">
-                    <FaThLarge /> Posts
-                </button>
-                <button className="flex items-center gap-2 border-t-2 border-transparent px-6 py-4 text-sm font-semibold uppercase tracking-wider text-[#6a6a7a]">
-                    <FaBookmark /> Saved
-                </button>
             </div>
 
-            {/* Posts Grid */}
-            {posts.length > 0 ? (
-                <div className="grid grid-cols-3 gap-1 md:gap-4">
-                    {posts.map((post) => (
-                        <Link
-                            key={post._id}
-                            to={`/post/${post._id}`}
-                            className="group relative aspect-square overflow-hidden rounded-lg bg-[#1a1a24]"
-                        >
-                            {post.images && post.images.length > 0 ? (
-                                <img
-                                    src={post.images[0]}
-                                    alt="Post"
-                                    className="h-full w-full object-cover transition-all group-hover:scale-105 group-hover:opacity-80"
-                                />
-                            ) : (
-                                <div className="flex h-full w-full items-center justify-center text-[#6a6a7a]">
-                                    No Image
+            {/* Content Section - 3 Column Layout for larger screens to match Home */}
+            <div className="mx-auto max-w-5xl px-4 grid grid-cols-1 md:grid-cols-[340px_1fr] gap-6">
+                {/* Left Sidebar: About & Photos */}
+                <div className="space-y-6">
+                    {/* Intro Card */}
+                    <div className="bg-[#1a1a24] rounded-xl p-4 border border-[#2a2a38]">
+                        <h2 className="text-lg font-bold text-white mb-4">
+                            Intro
+                        </h2>
+                        <div className="space-y-3 text-sm">
+                            <div className="flex items-center gap-3 text-gray-300">
+                                <FaBriefcase className="text-[#6a6a7a] text-lg" />
+                                <span>
+                                    Works at <strong>Freelancer</strong>
+                                </span>
+                            </div>
+                            <div className="flex items-center gap-3 text-gray-300">
+                                <FaGraduationCap className="text-[#6a6a7a] text-lg" />
+                                <span>
+                                    Studied at{" "}
+                                    <strong>University of Design</strong>
+                                </span>
+                            </div>
+                            <div className="flex items-center gap-3 text-gray-300">
+                                <FaMapMarkerAlt className="text-[#6a6a7a] text-lg" />
+                                <span>
+                                    From <strong>Ho Chi Minh City</strong>
+                                </span>
+                            </div>
+                            {isOwnProfile && (
+                                <div className="flex items-center gap-3 text-gray-300">
+                                    <FaEnvelope className="text-[#6a6a7a] text-lg" />
+                                    <span>{user.email}</span>
                                 </div>
                             )}
-                        </Link>
-                    ))}
+                        </div>
+                        {isOwnProfile && (
+                            <button className="mt-4 w-full rounded-lg bg-[#2a2a38] py-2 text-sm font-medium text-white hover:bg-[#3f3f46] transition-colors">
+                                Edit Details
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Photos Card */}
+                    <div className="bg-[#1a1a24] rounded-xl p-4 border border-[#2a2a38]">
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className="text-lg font-bold text-white">
+                                Photos
+                            </h2>
+                            <button className="text-sm text-[#a855f7] hover:underline">
+                                See all
+                            </button>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2">
+                            {photos.slice(0, 9).map((img, i) => (
+                                <div
+                                    key={i}
+                                    className="aspect-square overflow-hidden rounded-lg bg-[#2a2a38]"
+                                >
+                                    <img
+                                        src={img}
+                                        alt=""
+                                        className="h-full w-full object-cover hover:scale-110 transition-transform duration-300"
+                                    />
+                                </div>
+                            ))}
+                            {photos.length === 0 && (
+                                <div className="col-span-3 text-center py-4 text-xs text-[#6a6a7a]">
+                                    No photos to show
+                                </div>
+                            )}
+                        </div>
+                    </div>
                 </div>
-            ) : (
-                <div className="py-16 text-center text-[#6a6a7a]">
-                    <FaCamera className="mx-auto mb-4 h-12 w-12" />
-                    <p className="text-xl font-semibold text-white">
-                        No Posts Yet
-                    </p>
-                    {isOwnProfile && (
-                        <Link
-                            to="/create-post"
-                            className="btn-primary mt-4 inline-block"
-                        >
-                            Share your first post
-                        </Link>
+
+                {/* Right Column: Feed */}
+                <div className="space-y-6">
+                    {/* Create Post Widget */}
+                    {isOwnProfile ? (
+                        <div className="bg-[#1a1a24] rounded-xl p-4 border border-[#2a2a38]">
+                            <div className="flex gap-3">
+                                <img
+                                    src={
+                                        currentUser?.avatar ||
+                                        `https://ui-avatars.com/api/?name=${currentUser?.name}&background=random`
+                                    }
+                                    alt=""
+                                    className="h-10 w-10 rounded-full object-cover"
+                                />
+                                <Link
+                                    to="/create-post"
+                                    className="flex-1 bg-[#2a2a38] hover:bg-[#3f3f46] text-[#6a6a7a] text-sm py-2.5 px-4 rounded-full transition-colors text-left flex items-center"
+                                >
+                                    What's on your mind?
+                                </Link>
+                            </div>
+                        </div>
+                    ) : null}
+
+                    {/* Posts Feed */}
+                    {posts.length === 0 ? (
+                        <div className="bg-[#1a1a24] rounded-xl p-8 text-center border border-[#2a2a38]">
+                            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[#2a2a38] mb-4">
+                                <FaCamera className="text-2xl text-[#6a6a7a]" />
+                            </div>
+                            <h3 className="text-xl font-bold text-white mb-2">
+                                No posts yet
+                            </h3>
+                            <p className="text-[#6a6a7a]">
+                                {isOwnProfile
+                                    ? "Share your first moment!"
+                                    : "This user hasn't posted anything yet."}
+                            </p>
+                        </div>
+                    ) : (
+                        posts.map((post) => (
+                            <PostCard
+                                key={post._id}
+                                post={post}
+                            />
+                        ))
                     )}
                 </div>
-            )}
+            </div>
         </div>
     );
 };

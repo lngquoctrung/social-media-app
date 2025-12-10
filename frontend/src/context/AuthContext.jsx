@@ -28,11 +28,13 @@ export const AuthProvider = ({ children }) => {
         return userData;
     };
 
-    const register = async (name, email, password) => {
+    const register = async (name, email, password, birthday, gender) => {
         const res = await api.post(API_ENDPOINTS.AUTH.REGISTER, {
             name,
             email,
             password,
+            birthday,
+            gender,
         });
         const userData = res.data.metadata.user;
         setUser(userData);

@@ -5,7 +5,7 @@ const config = require("../config");
 const { moveFile } = require("../utils/file.util");
 
 class UserService {
-    getProfile = async (userId) => {
+    getUserById = async (userId) => {
         const user = await userModel.findById(userId).select("-password -role -createdAt -updatedAt").lean();
         if (!user) throw new NotFoundError({ message: "User not found" });
         return user;

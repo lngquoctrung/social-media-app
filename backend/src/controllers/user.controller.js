@@ -3,9 +3,18 @@ const { Ok } = require("../core/success.response");
 
 const getProfile = async (req, res) => {
 	const { userId } = req.user;
-	const user = await userService.getProfile(userId);
+	const user = await userService.getUserById(userId);
 	new Ok({
 		message: "Get profile successfully",
+		metadata: user,
+	}).send(res);
+};
+
+const getUserById = async (req, res) => {
+	const { id } = req.params;
+	const user = await userService.getUserById(id);
+	new Ok({
+		message: "Get user successfully",
 		metadata: user,
 	}).send(res);
 };
@@ -30,6 +39,7 @@ const updateProfile = async (req, res) => {
 
 module.exports = {
 	getProfile,
+	getUserById,
 	uploadAvatarImage,
 	updateProfile,
 };

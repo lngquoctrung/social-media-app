@@ -7,8 +7,20 @@ const { moveFile, removeFile } = require("../utils/file.util");
 const { NotFoundError, ForbiddenError } = require("../core/error.response");
 
 class PostService {
-    getAllPosts = async (userId) => {
+    getAllPosts = async (currentUserId, filterUserId) => {
         const pipeline = [
+            ...(filterUserId ? [{
+                $match: { user: new mongoose.Types.ObjectId(filterUserId) }
+            }] : []),
+            {
+                $lookup: {
+                    from: 'Users',
+                    localField: 'user',
+                    foreignField: '_id',
+                    as: 'user'
+                }
+            },
+            { $unwind: '$user' },
             {
                 $lookup: {
                     from: 'Likes',
@@ -29,8 +41,96 @@ class PostService {
                 }
             },
             {
+                $lookup: {
+                    from: 'Comments',
+                    let: { postId: '$_id' },
+                    pipeline: [
+                        { $match: { $expr: { $eq: ['$post', '$$postId'] } } },
+                        { $count: 'count' }
+                    ],
+                    as: 'commentsData'
+                }
+            },
+            {
                 $addFields: {
                     likesCount: { $size: '$likes' },
+                    commentsCount: { $ifNull: [{ $arrayElemAt: ['$commentsData.count', 0] }, 0] },
+                    isLiked: {
+                        $cond: {
+                            if: {
+                                $and: [
+                                    !!currentUserId,
+                                    { $in: [currentUserId ? new mongoose.Types.ObjectId(currentUserId) : null, '$likes.user'] }
+                                ]
+                            },
+                            then: true,
+                            else: false
+                        }
+                    }
+                }
+            },
+            {
+                $project: {
+                    likes: 0,
+                    commentsData: 0,
+                    'user.password': 0
+                }
+            },
+            { $sort: { createdAt: -1 } }
+        ];
+
+        const posts = await postModel.aggregate(pipeline);
+        return posts;
+    }
+
+    getPostById = async (postId, userId) => {
+        const pipeline = [
+            {
+                $match: { _id: new mongoose.Types.ObjectId(postId) }
+            },
+            {
+                $lookup: {
+                    from: 'Users',
+                    localField: 'user',
+                    foreignField: '_id',
+                    as: 'user'
+                }
+            },
+            { $unwind: '$user' },
+            {
+                $lookup: {
+                    from: 'Likes',
+                    let: { postId: '$_id' },
+                    pipeline: [
+                        {
+                            $match: {
+                                $expr: {
+                                    $and: [
+                                        { $eq: ['$targetId', '$$postId'] },
+                                        { $eq: ['$targetType', 'Post'] }
+                                    ]
+                                }
+                            }
+                        }
+                    ],
+                    as: 'likes'
+                }
+            },
+            {
+                $lookup: {
+                    from: 'Comments',
+                    let: { postId: '$_id' },
+                    pipeline: [
+                        { $match: { $expr: { $eq: ['$post', '$$postId'] } } },
+                        { $count: 'count' }
+                    ],
+                    as: 'commentsData'
+                }
+            },
+            {
+                $addFields: {
+                    likesCount: { $size: '$likes' },
+                    commentsCount: { $ifNull: [{ $arrayElemAt: ['$commentsData.count', 0] }, 0] },
                     isLiked: {
                         $cond: {
                             if: {
@@ -47,14 +147,18 @@ class PostService {
             },
             {
                 $project: {
-                    likes: 0
+                    likes: 0,
+                    commentsData: 0,
+                    'user.password': 0
                 }
-            },
-            { $sort: { createdAt: -1 } }
+            }
         ];
 
         const posts = await postModel.aggregate(pipeline);
-        return posts;
+        if (!posts || posts.length === 0) {
+            throw new NotFoundError({ message: "Post not found" });
+        }
+        return posts[0];
     }
 
     createPost = async (userId, data) => {

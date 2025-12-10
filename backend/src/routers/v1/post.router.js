@@ -15,6 +15,10 @@ router.post("/upload-images",
     uploaderMiddleware.uploadPostImages,
     asyncHandler(postController.uploadPostImages)
 );
+router.get("/:id",
+    authMiddleware.optional,
+    asyncHandler(postController.getPostById)
+);
 router.post("/",
     authMiddleware,
     asyncHandler(postController.createPost)

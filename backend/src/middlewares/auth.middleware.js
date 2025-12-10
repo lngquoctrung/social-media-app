@@ -5,10 +5,13 @@ const tokenService = require('../services/token.service');
 
 const processToken = async (req) => {
 	const authHeader = req.headers.authorization;
-	if (!authHeader || !authHeader.startsWith("Bearer ")) {
-		return null;
+	let token;
+	if (authHeader && authHeader.startsWith("Bearer ")) {
+		token = authHeader.split(" ")[1];
+	} else if (req.cookies && req.cookies.accessToken) {
+		token = req.cookies.accessToken;
 	}
-	const token = authHeader.split(" ")[1];
+
 	if (!token) return null;
 
 	const decodeToken = await verifyToken(token);

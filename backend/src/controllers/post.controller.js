@@ -3,11 +3,22 @@ const { Ok, Created } = require("../core/success.response");
 const { BadRequestError } = require("../core/error.response");
 
 const getAllPosts = async (req, res) => {
-	const userId = req.user?.userId;
-	const posts = await postService.getAllPosts(userId);
+	const currentUserId = req.user?.userId;
+	const filterUserId = req.query.userId;
+	const posts = await postService.getAllPosts(currentUserId, filterUserId);
 	new Ok({
 		message: "Get all posts successfully",
 		metadata: posts,
+	}).send(res);
+};
+
+const getPostById = async (req, res) => {
+	const userId = req.user?.userId;
+	const { id } = req.params;
+	const post = await postService.getPostById(id, userId);
+	new Ok({
+		message: "Get post successfully",
+		metadata: post,
 	}).send(res);
 };
 
@@ -52,6 +63,7 @@ const deletePost = async (req, res) => {
 
 module.exports = {
 	getAllPosts,
+	getPostById,
 	uploadPostImages,
 	createPost,
 	updatePost,
