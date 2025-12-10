@@ -26,8 +26,7 @@ app.use(bodyParser.json());
 app.use(cookieParser());
 app.use(
     cors({
-        // origin: config.auth.FRONT_END_URL,
-        origin: "*",
+        origin: config.auth.FRONT_END_URL,
         credentials: true,
         methods: ["GET", "POST", "PUT", "DELETE"],
         allowedHeaders: ["Content-Type", "Authorization"],

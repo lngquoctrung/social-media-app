@@ -5,6 +5,7 @@ data/
 database/
 public/
 temp/
+frontend-old-version/
 
 README.txt
 .env

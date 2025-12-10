@@ -21,7 +21,6 @@ const processToken = async (req) => {
 
 const authMiddleware = async (req, res, next) => {
 	try {
-		// Check authorization header
 		const result = await processToken(req);
 		if (!result) throw new AuthFailureError({ message: "Invalid Authentication" });
 
@@ -43,7 +42,6 @@ const optionalAuthMiddleware = async (req, res, next) => {
 		}
 		next();
 	} catch (err) {
-		// Ignore errors for optional auth
 		next();
 	}
 }
