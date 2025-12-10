@@ -8,6 +8,8 @@ import {
     FaArrowLeft,
     FaEllipsisH,
     FaSmile,
+    FaChevronLeft,
+    FaChevronRight,
 } from "react-icons/fa";
 import api from "../api/axios";
 import { API_ENDPOINTS } from "../api/endpoints";
@@ -24,6 +26,21 @@ export const PostDetail = () => {
     const [submitting, setSubmitting] = useState(false);
     const [isLiked, setIsLiked] = useState(false);
     const [likesCount, setLikesCount] = useState(0);
+    const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+    const nextImage = (e) => {
+        e?.stopPropagation();
+        if (post.images && currentImageIndex < post.images.length - 1) {
+            setCurrentImageIndex((prev) => prev + 1);
+        }
+    };
+
+    const prevImage = (e) => {
+        e?.stopPropagation();
+        if (currentImageIndex > 0) {
+            setCurrentImageIndex((prev) => prev - 1);
+        }
+    };
 
     useEffect(() => {
         fetchData();
@@ -111,14 +128,53 @@ export const PostDetail = () => {
         <div className="flex min-h-[calc(100vh-64px)] items-center justify-center bg-[#0f0f14] p-4">
             {/* Modal Container */}
             <div className="flex h-[85vh] w-full max-w-6xl overflow-hidden rounded-xl border border-[#3a3a4a] bg-[#1a1a24] shadow-2xl md:flex-row flex-col">
-                {/* Left Side: Image */}
-                <div className="relative flex h-full w-full items-center justify-center bg-black md:w-[60%] lg:w-[65%]">
+                {/* Left Side: Image Carousel */}
+                <div className="relative flex h-full w-full items-center justify-center bg-black md:w-[60%] lg:w-[65%] group">
                     {post.images && post.images.length > 0 ? (
-                        <img
-                            src={post.images[0]}
-                            alt="Post"
-                            className="h-full w-full object-contain"
-                        />
+                        <>
+                            <img
+                                src={post.images[currentImageIndex]}
+                                alt={`Post ${currentImageIndex + 1}`}
+                                className="h-full w-full object-contain transition-opacity duration-300"
+                            />
+
+                            {/* Navigation Buttons */}
+                            {post.images.length > 1 && (
+                                <>
+                                    {currentImageIndex > 0 && (
+                                        <button
+                                            onClick={prevImage}
+                                            className="absolute left-16 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white hover:bg-black/70 backdrop-blur-xs transition-all opacity-0 group-hover:opacity-100 z-10"
+                                        >
+                                            <FaChevronLeft size={20} />
+                                        </button>
+                                    )}
+                                    {currentImageIndex <
+                                        post.images.length - 1 && (
+                                        <button
+                                            onClick={nextImage}
+                                            className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white hover:bg-black/70 backdrop-blur-xs transition-all opacity-0 group-hover:opacity-100 z-10"
+                                        >
+                                            <FaChevronRight size={20} />
+                                        </button>
+                                    )}
+
+                                    {/* Dots Indicator */}
+                                    <div className="absolute bottom-6 left-1/2 flex -translate-x-1/2 gap-2 rounded-full bg-black/40 px-3 py-1.5 backdrop-blur-xs z-10">
+                                        {post.images.map((_, idx) => (
+                                            <div
+                                                key={idx}
+                                                className={`h-2 w-2 rounded-full transition-all ${
+                                                    idx === currentImageIndex
+                                                        ? "bg-white scale-110"
+                                                        : "bg-white/50"
+                                                }`}
+                                            />
+                                        ))}
+                                    </div>
+                                </>
+                            )}
+                        </>
                     ) : (
                         <div className="text-gray-500">No Image</div>
                     )}

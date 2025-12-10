@@ -110,7 +110,7 @@ export const Register = () => {
                 croppedAreaPixels
             );
             const formData = new FormData();
-            formData.append("avatar", croppedImageBlob, "avatar.jpg");
+            formData.append("avatar-image", croppedImageBlob, "avatar.jpg");
 
             const res = await api.put(
                 API_ENDPOINTS.USERS.UPLOAD_AVATAR,

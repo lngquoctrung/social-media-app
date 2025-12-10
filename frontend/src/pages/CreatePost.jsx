@@ -106,7 +106,7 @@ export const CreatePost = () => {
         try {
             const formData = new FormData();
             croppedImages.forEach((blob) => {
-                formData.append("images", blob, "image.jpg");
+                formData.append("post-images", blob, "image.jpg");
             });
 
             // 1. Upload Images

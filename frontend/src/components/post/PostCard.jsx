@@ -6,6 +6,8 @@ import {
     FaRegComment,
     FaShare,
     FaEllipsisH,
+    FaChevronLeft,
+    FaChevronRight,
 } from "react-icons/fa";
 import { useAuth } from "../../context/AuthContext";
 import api from "../../api/axios";
@@ -17,6 +19,21 @@ export const PostCard = ({ post }) => {
     const [isLiked, setIsLiked] = useState(post.isLiked || false);
     const [likesCount, setLikesCount] = useState(post.likesCount || 0);
     const [isAnimating, setIsAnimating] = useState(false);
+    const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+    const nextImage = (e) => {
+        e.stopPropagation();
+        if (post.images && currentImageIndex < post.images.length - 1) {
+            setCurrentImageIndex((prev) => prev + 1);
+        }
+    };
+
+    const prevImage = (e) => {
+        e.stopPropagation();
+        if (currentImageIndex > 0) {
+            setCurrentImageIndex((prev) => prev - 1);
+        }
+    };
 
     const handleLike = async (e) => {
         e?.stopPropagation(); // Prevent navigation when clicking like
@@ -105,23 +122,62 @@ export const PostCard = ({ post }) => {
                 </div>
             )}
 
-            {/* Image */}
+            {/* Image Carousel */}
             {post.images && post.images.length > 0 && (
-                <div
-                    onClick={goToDetail}
-                    className="relative w-full cursor-pointer bg-[#1a1a24] hover:opacity-95 active:opacity-90"
-                >
-                    <img
-                        src={post.images[0]}
-                        alt="Post content"
-                        className="w-full object-cover"
-                        style={{ maxHeight: "600px", minHeight: "300px" }}
-                        loading="lazy"
-                    />
+                <div className="relative w-full bg-[#1a1a24] hover:opacity-95 active:opacity-90 group">
+                    <div
+                        onClick={goToDetail}
+                        className="cursor-pointer"
+                    >
+                        <img
+                            src={post.images[currentImageIndex]}
+                            alt={`Post content ${currentImageIndex + 1}`}
+                            className="w-full object-cover transition-opacity duration-300"
+                            style={{ maxHeight: "600px", minHeight: "300px" }}
+                            loading="lazy"
+                        />
+                    </div>
+
                     {isAnimating && (
-                        <div className="absolute inset-0 flex items-center justify-center animate-like">
+                        <div className="absolute inset-0 flex items-center justify-center animate-like pointer-events-none">
                             <FaHeart className="h-24 w-24 text-white drop-shadow-xl" />
                         </div>
+                    )}
+
+                    {/* Navigation Buttons */}
+                    {post.images.length > 1 && (
+                        <>
+                            {currentImageIndex > 0 && (
+                                <button
+                                    onClick={prevImage}
+                                    className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white hover:bg-black/70 backdrop-blur-xs transition-all opacity-0 group-hover:opacity-100"
+                                >
+                                    <FaChevronLeft size={16} />
+                                </button>
+                            )}
+                            {currentImageIndex < post.images.length - 1 && (
+                                <button
+                                    onClick={nextImage}
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white hover:bg-black/70 backdrop-blur-xs transition-all opacity-0 group-hover:opacity-100"
+                                >
+                                    <FaChevronRight size={16} />
+                                </button>
+                            )}
+
+                            {/* Dots Indicator */}
+                            <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 gap-1.5 rounded-full bg-black/40 px-2 py-1 backdrop-blur-xs">
+                                {post.images.map((_, idx) => (
+                                    <div
+                                        key={idx}
+                                        className={`h-1.5 w-1.5 rounded-full transition-all ${
+                                            idx === currentImageIndex
+                                                ? "bg-white scale-110"
+                                                : "bg-white/50"
+                                        }`}
+                                    />
+                                ))}
+                            </div>
+                        </>
                     )}
                 </div>
             )}
