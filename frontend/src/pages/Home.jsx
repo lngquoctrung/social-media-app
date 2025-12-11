@@ -14,17 +14,100 @@ import { useAuth } from "../context/AuthContext";
 
 export const Home = () => {
     const { user } = useAuth();
-    const [posts, setPosts] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [posts, setPosts] = useState(() => {
+        // Initialize from session storage if available
+        const savedPosts = sessionStorage.getItem("homePosts");
+        return savedPosts ? JSON.parse(savedPosts) : [];
+    });
+    const [loading, setLoading] = useState(() => {
+        // If we have posts, we are not initially loading (we show cached content first)
+        return !sessionStorage.getItem("homePosts");
+    });
 
     useEffect(() => {
+        // Prevent browser from restoring scroll automatically
+        if ("scrollRestoration" in window.history) {
+            window.history.scrollRestoration = "manual";
+        }
+
         fetchPosts();
+
+        // Save scroll position throttled
+        let timeoutId;
+        const handleScroll = () => {
+            if (timeoutId) return;
+            timeoutId = setTimeout(() => {
+                sessionStorage.setItem(
+                    "homeScrollY",
+                    window.scrollY.toString()
+                );
+                timeoutId = null;
+            }, 500);
+        };
+
+        window.addEventListener("scroll", handleScroll);
+
+        return () => {
+            window.removeEventListener("scroll", handleScroll);
+            if (timeoutId) clearTimeout(timeoutId);
+        };
     }, []);
+
+    // Save posts to session storage whenever they revert/update
+    useEffect(() => {
+        if (posts.length > 0) {
+            sessionStorage.setItem("homePosts", JSON.stringify(posts));
+        }
+    }, [posts]);
+
+    // Restore scroll when component mounts (or when cached posts are rendered)
+    useEffect(() => {
+        const savedScrollY = sessionStorage.getItem("homeScrollY");
+
+        if (savedScrollY && posts.length > 0) {
+            const targetY = parseInt(savedScrollY);
+
+            // Check immediately
+            window.scrollTo(0, targetY);
+
+            // Continue attempting to restore scroll for dynamic content (images)
+            let attempts = 0;
+            const maxAttempts = 50; // Try for ~2.5 seconds (50 * 50ms)
+
+            const intervalId = setInterval(() => {
+                // If we successfully established the scroll position (with small tolerance)
+                // AND the document is large enough to support it
+                if (Math.abs(window.scrollY - targetY) < 10) {
+                    clearInterval(intervalId);
+                    return;
+                }
+
+                // If we can't scroll there yet because body is too short, this will just
+                // scroll to bottom, which is fine as intermediate step
+                window.scrollTo(0, targetY);
+
+                attempts++;
+                if (attempts >= maxAttempts) {
+                    clearInterval(intervalId);
+                }
+            }, 50);
+
+            return () => clearInterval(intervalId);
+        }
+    }, [posts]); // triggered when posts are loaded/restored
 
     const fetchPosts = async () => {
         try {
             const res = await api.get(API_ENDPOINTS.POSTS.LIST);
-            setPosts(res.data.metadata || []);
+            const newPosts = res.data.metadata || [];
+
+            // Only update if data changed (to prevent unnecessary re-renders/scroll jumps)
+            // But simple setPosts is usually fine as React batches.
+            setPosts(newPosts);
+
+            // If we didn't have posts before, we might need to restore scroll now?
+            // Usually if we had cached posts, we already restored.
+            // If we didn't, we are at top anyway.
         } catch (err) {
             console.error(err);
         } finally {
@@ -33,7 +116,11 @@ export const Home = () => {
     };
 
     const handlePostDelete = (postId) => {
-        setPosts((prev) => prev.filter((p) => p._id !== postId));
+        setPosts((prev) => {
+            const newPosts = prev.filter((p) => p._id !== postId);
+            sessionStorage.setItem("homePosts", JSON.stringify(newPosts));
+            return newPosts;
+        });
     };
 
     if (loading)

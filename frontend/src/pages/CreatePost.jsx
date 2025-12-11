@@ -87,7 +87,6 @@ export const CreatePost = () => {
                 })
             ).then((results) => {
                 setSelectedImages(results);
-                setCroppedImages([]);
                 setCurrentCropIndex(0);
                 setStep(2); // Start cropping
             });
@@ -107,6 +106,14 @@ export const CreatePost = () => {
         }
     };
 
+    const handleCancel = () => {
+        if (isEditMode) {
+            navigate(-1);
+        } else {
+            navigate("/");
+        }
+    };
+
     const handleBack = () => {
         if (step === 2) {
             if (currentCropIndex > 0) {
@@ -114,7 +121,6 @@ export const CreatePost = () => {
                 setCroppedImages((prev) => prev.slice(0, -1));
             } else {
                 setSelectedImages([]);
-                setCroppedImages([]);
                 setStep(1);
             }
         } else if (step === 3) {
@@ -231,15 +237,21 @@ export const CreatePost = () => {
             <div className="card-glass overflow-hidden">
                 {/* Header */}
                 <div className="flex items-center justify-between border-b border-[#3a3a4a] px-4 py-3">
-                    {step > 1 ? (
+                    {/* Left Button Logic: Cancel vs Back */}
+                    {step === 1 || (isEditMode && step === 3) ? (
+                        <button
+                            onClick={handleCancel}
+                            className="text-[#b8b8c8] hover:text-white text-sm font-medium"
+                        >
+                            Cancel
+                        </button>
+                    ) : (
                         <button
                             onClick={handleBack}
                             className="text-[#b8b8c8] hover:text-white"
                         >
                             <FaArrowLeft className="h-5 w-5" />
                         </button>
-                    ) : (
-                        <div className="w-5"></div>
                     )}
 
                     <h2 className="font-semibold text-white">
