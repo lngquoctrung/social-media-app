@@ -12,7 +12,8 @@ const createComment = async (req, res) => {
 
 const getCommentsByPost = async (req, res) => {
 	const { postId } = req.params;
-	const comments = await commentService.getCommentsByPost(postId);
+	const userId = req.user?.userId;
+	const comments = await commentService.getCommentsByPost(postId, userId);
 	new Ok({
 		message: "Get comments successfully",
 		metadata: comments,
@@ -28,8 +29,20 @@ const deleteComment = async (req, res) => {
 	}).send(res);
 }
 
+const updateComment = async (req, res) => {
+	const { userId } = req.user;
+	const { id } = req.params;
+	const { content } = req.body;
+	const comment = await commentService.updateComment(userId, id, content);
+	new Ok({
+		message: "Update comment successfully",
+		metadata: comment,
+	}).send(res);
+}
+
 module.exports = {
 	createComment,
 	getCommentsByPost,
-	deleteComment
+	deleteComment,
+	updateComment
 };

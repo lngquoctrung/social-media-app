@@ -23,6 +23,7 @@ export const API_ENDPOINTS = {
         LIST: (postId) => `/api/v1/comments/${postId}`,
         CREATE: '/api/v1/comments',
         DELETE: (id) => `/api/v1/comments/${id}`,
+        UPDATE: (id) => `/api/v1/comments/${id}`,
     },
     LIKES: {
         TOGGLE: '/api/v1/likes/toggle',

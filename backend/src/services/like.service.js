@@ -15,6 +15,12 @@ class LikeService {
 
         if (!target) throw new NotFoundError({ message: `${targetType} not found` });
 
+        // Check if user is the owner of the target
+        const ownerId = targetType === 'Post' ? target.user : target.userId;
+        if (ownerId.toString() === userId.toString()) {
+            throw new BadRequestError({ message: "You cannot like your own content" });
+        }
+
         // Check if like exists
         const existingLike = await likeModel.findOne({
             user: userId,

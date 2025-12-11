@@ -1,4 +1,5 @@
 const commentModel = require("../models/comment.model");
+const mongoose = require('mongoose');
 const postModel = require("../models/post.model");
 const { NotFoundError, ForbiddenError } = require("../core/error.response");
 
@@ -25,14 +26,68 @@ class CommentService {
         return newComment;
     }
 
-    getCommentsByPost = async (postId) => {
-        // Return flat list, let frontend handle nesting or simple display
-        // Populate user info
-        const comments = await commentModel.find({ postId: postId })
-            .sort({ createdAt: 1 }) // Chronological order usually better for comments, or -1 for newest first. keeping 1 for thread flow.
-            .populate("userId", "name avatar") // Select name and avatar from user
-            .lean();
+    getCommentsByPost = async (postId, userId) => {
+        const pipeline = [
+            {
+                $match: { postId: new mongoose.Types.ObjectId(postId) }
+            },
+            {
+                $sort: { createdAt: 1 }
+            },
+            {
+                $lookup: {
+                    from: 'Users',
+                    localField: 'userId',
+                    foreignField: '_id',
+                    as: 'user'
+                }
+            },
+            { $unwind: '$user' },
+            {
+                $lookup: {
+                    from: 'Likes',
+                    let: { commentId: '$_id' },
+                    pipeline: [
+                        {
+                            $match: {
+                                $expr: {
+                                    $and: [
+                                        { $eq: ['$targetId', '$$commentId'] },
+                                        { $eq: ['$targetType', 'Comment'] }
+                                    ]
+                                }
+                            }
+                        }
+                    ],
+                    as: 'likes'
+                }
+            },
+            {
+                $addFields: {
+                    likesCount: { $size: '$likes' },
+                    isLiked: {
+                        $cond: {
+                            if: {
+                                $and: [
+                                    !!userId,
+                                    { $in: [userId ? new mongoose.Types.ObjectId(userId) : null, '$likes.user'] }
+                                ]
+                            },
+                            then: true,
+                            else: false
+                        }
+                    }
+                }
+            },
+            {
+                $project: {
+                    likes: 0,
+                    'user.password': 0
+                }
+            }
+        ];
 
+        const comments = await commentModel.aggregate(pipeline);
         return comments;
     }
 
@@ -49,6 +104,19 @@ class CommentService {
         await this.deleteCommentsRecursively(commentId);
 
         return true;
+    }
+
+    updateComment = async (userId, commentId, content) => {
+        const comment = await commentModel.findById(commentId);
+        if (!comment) throw new NotFoundError({ message: "Comment not found" });
+
+        if (comment.userId.toString() !== userId) {
+            throw new ForbiddenError({ message: "You are not authorized to update this comment" });
+        }
+
+        comment.content = content;
+        await comment.save();
+        return comment;
     }
 
     // Helper to delete recursively

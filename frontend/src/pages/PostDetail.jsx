@@ -14,6 +14,7 @@ import {
 import api from "../api/axios";
 import { API_ENDPOINTS } from "../api/endpoints";
 import { useAuth } from "../context/AuthContext";
+import { ConfirmationModal } from "../components/common/ConfirmationModal";
 
 export const PostDetail = () => {
     const { id } = useParams();
@@ -27,6 +28,31 @@ export const PostDetail = () => {
     const [isLiked, setIsLiked] = useState(false);
     const [likesCount, setLikesCount] = useState(0);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+    // Menu States
+    const [showPostMenu, setShowPostMenu] = useState(false);
+    const [activeCommentMenuId, setActiveCommentMenuId] = useState(null);
+
+    // Comment Edit States
+    const [editingCommentId, setEditingCommentId] = useState(null);
+    const [editCommentContent, setEditCommentContent] = useState("");
+
+    // Modal State
+    const [modalConfig, setModalConfig] = useState({
+        isOpen: false,
+        title: "",
+        message: "",
+        onConfirm: () => {},
+        isDanger: false,
+    });
+
+    const openModal = (config) => {
+        setModalConfig({ ...config, isOpen: true });
+    };
+
+    const closeModal = () => {
+        setModalConfig((prev) => ({ ...prev, isOpen: false }));
+    };
 
     const nextImage = (e) => {
         e?.stopPropagation();
@@ -65,8 +91,86 @@ export const PostDetail = () => {
         }
     };
 
+    const isPostOwner = user?._id === post?.user?._id;
+
+    // --- Post Actions ---
+    const handlePostDelete = async () => {
+        openModal({
+            title: "Delete Post",
+            message:
+                "Are you sure you want to delete this post? This action cannot be undone.",
+            confirmText: "Delete",
+            isDanger: true,
+            onConfirm: async () => {
+                try {
+                    await api.delete(API_ENDPOINTS.POSTS.DELETE(post._id));
+                    navigate("/");
+                } catch (error) {
+                    console.error("Failed to delete post", error);
+                }
+            },
+        });
+    };
+
+    const handlePostEdit = () => {
+        navigate(`/post/edit/${post._id}`);
+    };
+
+    // --- Comment Actions ---
+    const handleCommentDelete = async (commentId) => {
+        openModal({
+            title: "Delete Comment",
+            message: "Are you sure you want to delete this comment?",
+            confirmText: "Delete",
+            isDanger: true,
+            onConfirm: async () => {
+                try {
+                    await api.delete(API_ENDPOINTS.COMMENTS.DELETE(commentId));
+                    setComments((prev) =>
+                        prev.filter((c) => c._id !== commentId)
+                    );
+                    setActiveCommentMenuId(null);
+                } catch (error) {
+                    console.error("Failed to delete comment", error);
+                }
+            },
+        });
+    };
+
+    const startEditingComment = (comment) => {
+        setEditingCommentId(comment._id);
+        setEditCommentContent(comment.content);
+        setActiveCommentMenuId(null);
+    };
+
+    const cancelEditingComment = () => {
+        setEditingCommentId(null);
+        setEditCommentContent("");
+    };
+
+    const saveEditedComment = async (commentId) => {
+        if (!editCommentContent.trim()) return;
+        try {
+            await api.put(API_ENDPOINTS.COMMENTS.UPDATE(commentId), {
+                content: editCommentContent,
+            });
+            setComments((prev) =>
+                prev.map((c) =>
+                    c._id === commentId
+                        ? { ...c, content: editCommentContent }
+                        : c
+                )
+            );
+            setEditingCommentId(null);
+            setEditCommentContent("");
+        } catch (error) {
+            console.error("Failed to update comment", error);
+        }
+    };
+
     const handleLike = async () => {
         if (!user) return navigate("/login");
+        if (isPostOwner) return;
 
         const newIsLiked = !isLiked;
         setIsLiked(newIsLiked);
@@ -75,7 +179,7 @@ export const PostDetail = () => {
         try {
             await api.post(API_ENDPOINTS.LIKES.TOGGLE, {
                 targetId: id,
-                targetType: "post",
+                targetType: "Post",
             });
         } catch {
             setIsLiked(!newIsLiked);
@@ -103,6 +207,50 @@ export const PostDetail = () => {
         }
     };
 
+    const handleCommentLike = async (commentId, isLiked, commentOwnerId) => {
+        if (!user) return navigate("/login");
+        if (user._id === commentOwnerId) return;
+
+        // Optimistic update
+        setComments((prevComments) =>
+            prevComments.map((c) => {
+                if (c._id === commentId) {
+                    return {
+                        ...c,
+                        isLiked: !isLiked,
+                        likesCount: isLiked
+                            ? c.likesCount - 1
+                            : c.likesCount + 1,
+                    };
+                }
+                return c;
+            })
+        );
+
+        try {
+            await api.post(API_ENDPOINTS.LIKES.TOGGLE, {
+                targetId: commentId,
+                targetType: "Comment",
+            });
+        } catch (error) {
+            // Revert on error
+            setComments((prevComments) =>
+                prevComments.map((c) => {
+                    if (c._id === commentId) {
+                        return {
+                            ...c,
+                            isLiked: isLiked, // Revert to original state
+                            likesCount: isLiked
+                                ? c.likesCount + 1
+                                : c.likesCount - 1,
+                        };
+                    }
+                    return c;
+                })
+            );
+        }
+    };
+
     const formatTime = (dateString) => {
         return new Date(dateString).toLocaleDateString("en-US", {
             month: "short",
@@ -125,9 +273,24 @@ export const PostDetail = () => {
         );
 
     return (
-        <div className="flex min-h-[calc(100vh-64px)] items-center justify-center bg-[#0f0f14] p-4">
+        <div
+            onClick={() => navigate(-1)}
+            className="flex min-h-[calc(100vh-64px)] items-center justify-center bg-[#0f0f14]/90 p-4 backdrop-blur-sm cursor-pointer"
+        >
+            <ConfirmationModal
+                isOpen={modalConfig.isOpen}
+                onClose={closeModal}
+                onConfirm={modalConfig.onConfirm}
+                title={modalConfig.title}
+                message={modalConfig.message}
+                confirmText={modalConfig.confirmText}
+                isDanger={modalConfig.isDanger}
+            />
             {/* Modal Container */}
-            <div className="flex h-[85vh] w-full max-w-6xl overflow-hidden rounded-xl border border-[#3a3a4a] bg-[#1a1a24] shadow-2xl md:flex-row flex-col">
+            <div
+                onClick={(e) => e.stopPropagation()}
+                className="flex h-[85vh] w-full max-w-6xl overflow-hidden rounded-xl border border-[#3a3a4a] bg-[#1a1a24] shadow-2xl md:flex-row flex-col cursor-auto relative"
+            >
                 {/* Left Side: Image Carousel */}
                 <div className="relative flex h-full w-full items-center justify-center bg-black md:w-[60%] lg:w-[65%] group">
                     {post.images && post.images.length > 0 ? (
@@ -189,7 +352,7 @@ export const PostDetail = () => {
                 {/* Right Side: Content */}
                 <div className="flex h-full w-full flex-col bg-[#22222e] md:w-[40%] lg:w-[35%]">
                     {/* Header */}
-                    <div className="flex items-center justify-between border-b border-[#3a3a4a] p-4">
+                    <div className="flex items-center justify-between border-b border-[#3a3a4a] p-4 relative">
                         <div className="flex items-center gap-3">
                             <Link to={`/profile/${post.user?._id}`}>
                                 <img
@@ -215,7 +378,50 @@ export const PostDetail = () => {
                                 )}
                             </div>
                         </div>
-                        <FaEllipsisH className="cursor-pointer text-[#6a6a7a] hover:text-white" />
+
+                        {/* Post Menu */}
+                        {isPostOwner && (
+                            <div className="relative">
+                                <button
+                                    onClick={() =>
+                                        setShowPostMenu(!showPostMenu)
+                                    }
+                                    className="cursor-pointer text-[#6a6a7a] hover:text-white p-2"
+                                >
+                                    <FaEllipsisH />
+                                </button>
+                                {showPostMenu && (
+                                    <>
+                                        <div
+                                            className="fixed inset-0 z-10"
+                                            onClick={() =>
+                                                setShowPostMenu(false)
+                                            }
+                                        />
+                                        <div className="absolute right-0 top-full mt-2 w-32 rounded-lg border border-[#3a3a4a] bg-[#1a1a24] shadow-xl z-20 overflow-hidden">
+                                            <button
+                                                onClick={() => {
+                                                    setShowPostMenu(false);
+                                                    handlePostEdit();
+                                                }}
+                                                className="w-full px-4 py-2 text-left text-sm text-white hover:bg-[#2a2a38]"
+                                            >
+                                                Edit Post
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    setShowPostMenu(false);
+                                                    handlePostDelete();
+                                                }}
+                                                className="w-full px-4 py-2 text-left text-sm text-red-500 hover:bg-[#2a2a38]"
+                                            >
+                                                Delete Post
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        )}
                     </div>
 
                     {/* Comments Scroll Area */}
@@ -250,42 +456,176 @@ export const PostDetail = () => {
                         )}
 
                         {/* Comments List */}
-                        {comments.map((c) => (
-                            <div
-                                key={c._id}
-                                className="flex gap-3"
-                            >
-                                <Link to={`/profile/${c.user?._id}`}>
-                                    <img
-                                        src={
-                                            c.user?.avatar ||
-                                            `https://ui-avatars.com/api/?name=${c.user?.name}&background=random`
-                                        }
-                                        alt=""
-                                        className="h-8 w-8 shrink-0 rounded-full"
-                                    />
-                                </Link>
-                                <div className="flex-1">
-                                    <div className="text-sm">
-                                        <Link
-                                            to={`/profile/${c.user?._id}`}
-                                            className="mr-2 font-semibold text-white hover:text-[#a855f7]"
-                                        >
-                                            {c.user?.name}
-                                        </Link>
-                                        <span className="text-[#e4e4e7]">
-                                            {c.content}
-                                        </span>
-                                    </div>
-                                    <div className="mt-1 flex items-center gap-3 text-xs text-[#6a6a7a]">
-                                        <span>{formatTime(c.createdAt)}</span>
-                                        <button className="font-semibold hover:text-white">
-                                            Reply
-                                        </button>
+                        {comments.map((c) => {
+                            const isCommentOwner = user?._id === c.user?._id;
+                            const isEditing = editingCommentId === c._id;
+
+                            return (
+                                <div
+                                    key={c._id}
+                                    className="flex gap-3 group/comment"
+                                >
+                                    <Link to={`/profile/${c.user?._id}`}>
+                                        <img
+                                            src={
+                                                c.user?.avatar ||
+                                                `https://ui-avatars.com/api/?name=${c.user?.name}&background=random`
+                                            }
+                                            alt=""
+                                            className="h-8 w-8 shrink-0 rounded-full"
+                                        />
+                                    </Link>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="text-sm group relative">
+                                            <Link
+                                                to={`/profile/${c.user?._id}`}
+                                                className="mr-2 font-semibold text-white hover:text-[#a855f7]"
+                                            >
+                                                {c.user?.name}
+                                            </Link>
+
+                                            {isEditing ? (
+                                                <div className="mt-1">
+                                                    <textarea
+                                                        value={
+                                                            editCommentContent
+                                                        }
+                                                        onChange={(e) =>
+                                                            setEditCommentContent(
+                                                                e.target.value
+                                                            )
+                                                        }
+                                                        className="w-full rounded bg-[#2a2a38] p-2 text-white focus:outline-none focus:ring-1 focus:ring-[#a855f7]"
+                                                        rows={2}
+                                                    />
+                                                    <div className="mt-2 flex gap-2">
+                                                        <button
+                                                            onClick={() =>
+                                                                saveEditedComment(
+                                                                    c._id
+                                                                )
+                                                            }
+                                                            className="text-xs text-[#a855f7] hover:underline"
+                                                        >
+                                                            Save
+                                                        </button>
+                                                        <button
+                                                            onClick={
+                                                                cancelEditingComment
+                                                            }
+                                                            className="text-xs text-[#6a6a7a] hover:text-white"
+                                                        >
+                                                            Cancel
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <span className="text-[#e4e4e7]">
+                                                    {c.content}
+                                                </span>
+                                            )}
+
+                                            {/* Comment Menu Button */}
+                                            {!isEditing && isCommentOwner && (
+                                                <div className="absolute right-0 top-0 opacity-0 group-hover/comment:opacity-100 transition-opacity">
+                                                    <button
+                                                        onClick={() =>
+                                                            setActiveCommentMenuId(
+                                                                activeCommentMenuId ===
+                                                                    c._id
+                                                                    ? null
+                                                                    : c._id
+                                                            )
+                                                        }
+                                                        className="text-[#6a6a7a] hover:text-white p-1"
+                                                    >
+                                                        <FaEllipsisH
+                                                            size={12}
+                                                        />
+                                                    </button>
+                                                    {activeCommentMenuId ===
+                                                        c._id && (
+                                                        <>
+                                                            <div
+                                                                className="fixed inset-0 z-10"
+                                                                onClick={() =>
+                                                                    setActiveCommentMenuId(
+                                                                        null
+                                                                    )
+                                                                }
+                                                            />
+                                                            <div className="absolute right-0 top-full mt-1 w-24 rounded border border-[#3a3a4a] bg-[#1a1a24] shadow-xl z-20 overflow-hidden">
+                                                                <button
+                                                                    onClick={() =>
+                                                                        startEditingComment(
+                                                                            c
+                                                                        )
+                                                                    }
+                                                                    className="w-full px-3 py-1.5 text-left text-xs text-white hover:bg-[#2a2a38]"
+                                                                >
+                                                                    Edit
+                                                                </button>
+                                                                <button
+                                                                    onClick={() =>
+                                                                        handleCommentDelete(
+                                                                            c._id
+                                                                        )
+                                                                    }
+                                                                    className="w-full px-3 py-1.5 text-left text-xs text-red-500 hover:bg-[#2a2a38]"
+                                                                >
+                                                                    Delete
+                                                                </button>
+                                                            </div>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {!isEditing && (
+                                            <div className="mt-1 flex items-center gap-3 text-xs text-[#6a6a7a]">
+                                                <span>
+                                                    {formatTime(c.createdAt)}
+                                                </span>
+                                                <button className="font-semibold hover:text-white">
+                                                    Reply
+                                                </button>
+                                                <button
+                                                    onClick={() =>
+                                                        handleCommentLike(
+                                                            c._id,
+                                                            c.isLiked,
+                                                            c.user?._id
+                                                        )
+                                                    }
+                                                    disabled={isCommentOwner}
+                                                    className={`flex items-center gap-1 font-semibold hover:text-white ${
+                                                        c.isLiked
+                                                            ? "text-pink-500"
+                                                            : ""
+                                                    } ${
+                                                        isCommentOwner
+                                                            ? "opacity-50 cursor-not-allowed hover:text-[#b8b8c8]"
+                                                            : ""
+                                                    }`}
+                                                >
+                                                    {c.isLiked ? (
+                                                        <FaHeart />
+                                                    ) : (
+                                                        <FaRegHeart />
+                                                    )}
+                                                    {c.likesCount > 0 && (
+                                                        <span>
+                                                            {c.likesCount}
+                                                        </span>
+                                                    )}
+                                                </button>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
 
                     {/* Footer Actions */}
@@ -293,7 +633,12 @@ export const PostDetail = () => {
                         <div className="flex items-center gap-4 p-4">
                             <button
                                 onClick={handleLike}
-                                className="text-2xl hover:opacity-80"
+                                disabled={isPostOwner}
+                                className={`text-2xl hover:opacity-80 ${
+                                    isPostOwner
+                                        ? "opacity-50 cursor-not-allowed hover:opacity-50"
+                                        : ""
+                                }`}
                             >
                                 {isLiked ? (
                                     <FaHeart className="text-pink-500" />

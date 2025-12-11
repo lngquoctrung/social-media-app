@@ -11,7 +11,7 @@ function App() {
     return (
         <div className="min-h-screen">
             <Navbar />
-            <main className="pt-16">
+            <main>
                 <Routes>
                     <Route
                         path="/"
@@ -27,6 +27,10 @@ function App() {
                     />
                     <Route
                         path="/create-post"
+                        element={<CreatePost />}
+                    />
+                    <Route
+                        path="/post/edit/:id"
                         element={<CreatePost />}
                     />
                     <Route

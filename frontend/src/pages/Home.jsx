@@ -32,6 +32,10 @@ export const Home = () => {
         }
     };
 
+    const handlePostDelete = (postId) => {
+        setPosts((prev) => prev.filter((p) => p._id !== postId));
+    };
+
     if (loading)
         return (
             <div className="flex h-screen items-center justify-center">
@@ -78,7 +82,6 @@ export const Home = () => {
                                 },
                                 { icon: HiTrendingUp, label: "Explore" },
                                 { icon: HiUserGroup, label: "Friends" },
-                                { icon: HiPhotograph, label: "Photos" },
                                 { icon: HiCalendar, label: "Events" },
                             ].map((item) => (
                                 <button
@@ -142,6 +145,7 @@ export const Home = () => {
                                 <PostCard
                                     key={post._id}
                                     post={post}
+                                    onDelete={handlePostDelete}
                                 />
                             ))
                         ) : (
@@ -196,7 +200,7 @@ export const Home = () => {
                     {/* Online Contacts */}
                     <div className="rounded-xl bg-[#1a1a24] p-4 border border-[#2a2a38]">
                         <h3 className="mb-4 text-sm font-bold text-gray-200">
-                            Online Friends
+                            Online Friends (Comming soon)
                         </h3>
                         <ul className="space-y-2">
                             {[1, 2, 3, 4, 5].map((i) => (
