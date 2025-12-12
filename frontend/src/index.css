@@ -26,6 +26,10 @@ body {
     .loader {
         @apply w-8 h-8 rounded-full border-2 border-[#2a2a38] border-t-purple-600 animate-spin;
     }
+
+    .input-field {
+        @apply w-full bg-[#0f0f14] border border-[#2a2a38] rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all duration-200;
+    }
 }
 
 /* Custom Scrollbar */

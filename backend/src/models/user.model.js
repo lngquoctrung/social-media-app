@@ -1,4 +1,8 @@
 const mongoose = require("mongoose");
+const config = require("../config");
+
+const protocol = config.env.NODE_ENV === "development" ? "http" : "https";
+const apiPrefix = `${config.app.API_PREFIX}/${config.app.API_VERSION}`;
 
 // * Define validations for User model
 const userSchema = new mongoose.Schema({
@@ -15,7 +19,7 @@ const userSchema = new mongoose.Schema({
 	avatar: {
 		type: String,
 		default:
-			"http://localhost:5050/api/v1/public/images/avatars/default-avatar.jpg",
+			`${protocol}://${config.env.HOST}:${config.env.PORT}/${apiPrefix}/public/images/avatars/default-avatar.jpg`,
 	},
 	gender: {
 		type: String,

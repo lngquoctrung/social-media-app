@@ -12,7 +12,7 @@ import {
 import { useAuth } from "../context/AuthContext";
 
 export const Home = () => {
-    const { user } = useAuth();
+    const { user, loading: authLoading } = useAuth();
     const [activeTab, setActiveTab] = useState("News Feed");
     const [posts, setPosts] = useState(() => {
         // Initialize from session storage if available
@@ -30,7 +30,9 @@ export const Home = () => {
             window.history.scrollRestoration = "manual";
         }
 
-        fetchPosts();
+        if (!authLoading) {
+            fetchPosts();
+        }
 
         // Save scroll position throttled
         let timeoutId;
@@ -44,7 +46,7 @@ export const Home = () => {
                     );
                 }
                 timeoutId = null;
-            }, 500);
+            }, 100);
         };
 
         window.addEventListener("scroll", handleScroll);
@@ -52,16 +54,8 @@ export const Home = () => {
         return () => {
             window.removeEventListener("scroll", handleScroll);
             if (timeoutId) clearTimeout(timeoutId);
-
-            // Save scroll position immediately on unmount or tab change
-            if (activeTab === "News Feed") {
-                sessionStorage.setItem(
-                    "homeScrollY",
-                    window.scrollY.toString()
-                );
-            }
         };
-    }, [activeTab]);
+    }, [activeTab, authLoading]);
 
     // Save posts to session storage whenever they revert/update
     useEffect(() => {
@@ -136,7 +130,13 @@ export const Home = () => {
                 setActiveTab(label);
             }
         } else {
-            // Switching to another tab
+            // Switching to another tab - Save scroll if currently on News Feed
+            if (activeTab === "News Feed") {
+                sessionStorage.setItem(
+                    "homeScrollY",
+                    window.scrollY.toString()
+                );
+            }
             setActiveTab(label);
             window.scrollTo({ top: 0, behavior: "smooth" });
         }
@@ -219,7 +219,7 @@ export const Home = () => {
                     {activeTab === "News Feed" ? (
                         <>
                             {/* Create Post Input */}
-                            <div className="mb-6 rounded-xl bg-[#1a1a24] p-4 border border-[#2a2a38]">
+                            <div className="mb-6 rounded-xl bg-[#1a1a24] p-3 md:p-4 border border-[#2a2a38]">
                                 <div className="flex gap-3">
                                     <img
                                         src={
@@ -229,11 +229,11 @@ export const Home = () => {
                                             }&background=random`
                                         }
                                         alt=""
-                                        className="h-10 w-10 rounded-full object-cover"
+                                        className="h-8 w-8 md:h-10 md:w-10 rounded-full object-cover"
                                     />
                                     <Link
                                         to="/create-post"
-                                        className="flex-1 bg-[#2a2a38] hover:bg-[#3f3f46] text-[#6a6a7a] text-sm py-2.5 px-4 rounded-full transition-colors text-left flex items-center"
+                                        className="flex-1 bg-[#2a2a38] hover:bg-[#3f3f46] text-[#6a6a7a] text-sm py-2 px-3 md:py-2.5 md:px-4 rounded-full transition-colors text-left flex items-center"
                                     >
                                         What's on your mind,{" "}
                                         {user?.name?.split(" ")[0]}?
@@ -356,19 +356,20 @@ export const Home = () => {
             </div>
 
             {/* Mobile Bottom Navigation */}
+            {/* Mobile Bottom Navigation - Compact */}
             <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-[#2a2a38] bg-[#1a1a24] pb-safe lg:hidden">
-                <div className="flex justify-around items-center px-2 py-3">
+                <div className="flex justify-around items-center px-2 py-2">
                     {navItems.map((item) => (
                         <button
                             key={item.label}
                             onClick={() => handleNavClick(item.label)}
-                            className={`flex flex-col items-center gap-1 p-2 transition-colors ${
+                            className={`flex flex-col items-center gap-0.5 p-1 transition-colors ${
                                 activeTab === item.label
                                     ? "text-[#a855f7]"
                                     : "text-[#71717a] hover:text-white"
                             }`}
                         >
-                            <item.icon className="h-6 w-6" />
+                            <item.icon className="h-5 w-5" />
                             <span className="text-[10px] font-medium">
                                 {item.label}
                             </span>

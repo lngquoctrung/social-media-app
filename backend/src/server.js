@@ -30,7 +30,7 @@ app.use(bodyParser.json());
 app.use(cookieParser());
 app.use(
     cors({
-        origin: config.auth.FRONT_END_URL,
+        origin: config.auth.ALLOWED_URLS.split(","),
         credentials: true,
         methods: ["GET", "POST", "PUT", "DELETE"],
         allowedHeaders: ["Content-Type", "Authorization"],
@@ -49,7 +49,7 @@ try {
     app.listen(config.env.PORT, config.env.HOST, async () => {
         console.clear();
         await connectDB();
-        console.log(`The server name: ${config.app.APP_NAME}`);
+        console.log(`The server name: ${config.app.APP_NAME} - ${config.env.NODE_ENV} - v${config.app.APP_VERSION}`);
         console.log(`Server is running on http://${config.env.HOST}:${config.env.PORT}`);
     });
 } catch (err) {

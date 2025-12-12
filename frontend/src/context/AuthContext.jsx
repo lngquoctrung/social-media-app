@@ -9,12 +9,28 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Try to get user from localStorage on load
-        const storedUser = localStorage.getItem("user");
-        if (storedUser) {
-            setUser(JSON.parse(storedUser));
-        }
-        setLoading(false);
+        const verifyAuth = async () => {
+            const storedUser = localStorage.getItem("user");
+            if (!storedUser) {
+                setLoading(false);
+                return;
+            }
+
+            try {
+                // Verify the token by fetching current user
+                // This will trigger the axios interceptor if token is expired
+                const res = await api.get(API_ENDPOINTS.USERS.ME);
+                setUser(res.data.metadata);
+            } catch (error) {
+                console.error("Session verification failed", error);
+                setUser(null);
+                localStorage.removeItem("user");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        verifyAuth();
     }, []);
 
     const login = async (email, password) => {

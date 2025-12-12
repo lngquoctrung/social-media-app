@@ -13,9 +13,11 @@ import { useAuth } from "../../context/AuthContext";
 import api from "../../api/axios";
 import { API_ENDPOINTS } from "../../api/endpoints";
 import { ConfirmationModal } from "../common/ConfirmationModal";
+import { useToast } from "../../context/ToastContext";
 
 export const PostCard = ({ post, onDelete }) => {
     const { user } = useAuth();
+    const { showToast } = useToast();
     const navigate = useNavigate();
     const [isLiked, setIsLiked] = useState(post.isLiked || false);
     const [likesCount, setLikesCount] = useState(post.likesCount || 0);
@@ -23,6 +25,11 @@ export const PostCard = ({ post, onDelete }) => {
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [showMenu, setShowMenu] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+    // Swipe States
+    const [touchStart, setTouchStart] = useState(null);
+    const [touchEnd, setTouchEnd] = useState(null);
+    const minSwipeDistance = 50;
 
     useEffect(() => {
         setIsLiked(post.isLiked || false);
@@ -37,8 +44,35 @@ export const PostCard = ({ post, onDelete }) => {
     };
 
     const prevImage = (e) => {
-        e.stopPropagation();
+        e?.stopPropagation();
         if (currentImageIndex > 0) {
+            setCurrentImageIndex((prev) => prev - 1);
+        }
+    };
+
+    const onTouchStart = (e) => {
+        setTouchEnd(null);
+        setTouchStart(e.targetTouches[0].clientX);
+    };
+
+    const onTouchMove = (e) => {
+        setTouchEnd(e.targetTouches[0].clientX);
+    };
+
+    const onTouchEnd = () => {
+        if (!touchStart || !touchEnd) return;
+        const distance = touchStart - touchEnd;
+        const isLeftSwipe = distance > minSwipeDistance;
+        const isRightSwipe = distance < -minSwipeDistance;
+
+        if (
+            isLeftSwipe &&
+            post.images &&
+            currentImageIndex < post.images.length - 1
+        ) {
+            setCurrentImageIndex((prev) => prev + 1);
+        }
+        if (isRightSwipe && currentImageIndex > 0) {
             setCurrentImageIndex((prev) => prev - 1);
         }
     };
@@ -89,6 +123,51 @@ export const PostCard = ({ post, onDelete }) => {
         }
     };
 
+    const handleShare = async (e) => {
+        e?.stopPropagation();
+        const shareUrl = `${window.location.origin}/post/${post._id}`;
+
+        if (navigator.clipboard && window.isSecureContext) {
+            try {
+                await navigator.clipboard.writeText(shareUrl);
+                showToast("Link copied to clipboard!", "success");
+            } catch (err) {
+                console.error("Failed to copy link via navigator", err);
+                fallbackCopyTextToClipboard(shareUrl);
+            }
+        } else {
+            fallbackCopyTextToClipboard(shareUrl);
+        }
+    };
+
+    const fallbackCopyTextToClipboard = (text) => {
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+
+        // Ensure textarea is not visible
+        textArea.style.position = "fixed";
+        textArea.style.left = "-9999px";
+        textArea.style.top = "0";
+        document.body.appendChild(textArea);
+
+        textArea.focus();
+        textArea.select();
+
+        try {
+            const successful = document.execCommand("copy");
+            if (successful) {
+                showToast("Link copied to clipboard!", "success");
+            } else {
+                showToast("Failed to copy link", "error");
+            }
+        } catch (err) {
+            console.error("Fallback copy failed", err);
+            showToast("Failed to copy link", "error");
+        }
+
+        document.body.removeChild(textArea);
+    };
+
     const goToDetail = () => {
         navigate(`/post/${post._id}`);
     };
@@ -107,6 +186,13 @@ export const PostCard = ({ post, onDelete }) => {
         });
     };
 
+    const handleProfileClick = (e) => {
+        e.stopPropagation(); // Explicitly stop bubbling
+        if (post.user?._id) {
+            navigate(`/profile/${post.user._id}`);
+        }
+    };
+
     return (
         <>
             <ConfirmationModal
@@ -120,29 +206,24 @@ export const PostCard = ({ post, onDelete }) => {
             />
             <div className="card-glass mb-6 overflow-hidden rounded-2xl border border-[#3a3a4a] bg-[#22222e]">
                 {/* Header */}
-                <div className="flex items-center justify-between p-4 relative">
+                <div className="flex items-center justify-between p-3 md:p-4">
                     <div className="flex items-center gap-3">
-                        <Link
-                            to={`/profile/${post.user?._id}`}
-                            className="avatar-ring"
-                        >
+                        <Link to={`/profile/${post.user?._id}`}>
                             <img
                                 src={
                                     post.user?.avatar ||
-                                    `https://ui-avatars.com/api/?name=${
-                                        post.user?.name || "U"
-                                    }&background=random`
+                                    `https://ui-avatars.com/api/?name=${post.user?.name}&background=random`
                                 }
-                                alt={post.user?.name}
-                                className="h-10 w-10 rounded-full object-cover"
+                                alt=""
+                                className="h-8 w-8 md:h-10 md:w-10 rounded-full object-cover border-2 border-[#a855f7]"
                             />
                         </Link>
                         <div>
                             <Link
                                 to={`/profile/${post.user?._id}`}
-                                className="block font-semibold text-white hover:text-[#a855f7]"
+                                className="font-semibold text-white hover:underline block leading-tight"
                             >
-                                {post.user?.name || "Unknown User"}
+                                {post.user?.name}
                             </Link>
                             <span className="text-xs text-[#6a6a7a]">
                                 {formatTime(post.createdAt)}
@@ -201,7 +282,12 @@ export const PostCard = ({ post, onDelete }) => {
 
                 {/* Image Carousel */}
                 {post.images && post.images.length > 0 && (
-                    <div className="relative w-full bg-[#1a1a24] hover:opacity-95 active:opacity-90 group">
+                    <div
+                        className="relative w-full bg-[#1a1a24] hover:opacity-95 active:opacity-90 group"
+                        onTouchStart={onTouchStart}
+                        onTouchMove={onTouchMove}
+                        onTouchEnd={onTouchEnd}
+                    >
                         <div
                             onClick={goToDetail}
                             className="cursor-pointer"
@@ -230,7 +316,7 @@ export const PostCard = ({ post, onDelete }) => {
                                 {currentImageIndex > 0 && (
                                     <button
                                         onClick={prevImage}
-                                        className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white hover:bg-black/70 backdrop-blur-xs transition-all opacity-0 group-hover:opacity-100"
+                                        className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white hover:bg-black/70 backdrop-blur-xs transition-all opacity-100 md:opacity-0 md:group-hover:opacity-100"
                                     >
                                         <FaChevronLeft size={16} />
                                     </button>
@@ -238,7 +324,7 @@ export const PostCard = ({ post, onDelete }) => {
                                 {currentImageIndex < post.images.length - 1 && (
                                     <button
                                         onClick={nextImage}
-                                        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white hover:bg-black/70 backdrop-blur-xs transition-all opacity-0 group-hover:opacity-100"
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white hover:bg-black/70 backdrop-blur-xs transition-all opacity-100 md:opacity-0 md:group-hover:opacity-100"
                                     >
                                         <FaChevronRight size={16} />
                                     </button>
@@ -301,7 +387,10 @@ export const PostCard = ({ post, onDelete }) => {
                                 </span>
                             </Link>
 
-                            <button className="flex items-center gap-2 text-sm font-medium text-[#b8b8c8] transition-colors hover:text-white">
+                            <button
+                                onClick={handleShare}
+                                className="flex items-center gap-2 text-sm font-medium text-[#b8b8c8] transition-colors hover:text-white"
+                            >
                                 <FaShare className="text-lg" />
                                 <span>Share</span>
                             </button>

@@ -3,8 +3,7 @@ const fs = require("fs");
 const bcryptjs = require("bcryptjs");
 
 const env = cleanEnv(process.env, {
-    FRONT_END_URL: str(),
-    STORAGE_URL: str(),
+    ALLOWED_URLS: str(),
 });
 
 const auth = {
