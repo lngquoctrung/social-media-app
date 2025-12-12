@@ -8,12 +8,12 @@ import {
     HiTrendingUp,
     HiUserGroup,
     HiCalendar,
-    HiPhotograph,
 } from "react-icons/hi";
 import { useAuth } from "../context/AuthContext";
 
 export const Home = () => {
     const { user } = useAuth();
+    const [activeTab, setActiveTab] = useState("News Feed");
     const [posts, setPosts] = useState(() => {
         // Initialize from session storage if available
         const savedPosts = sessionStorage.getItem("homePosts");
@@ -37,10 +37,12 @@ export const Home = () => {
         const handleScroll = () => {
             if (timeoutId) return;
             timeoutId = setTimeout(() => {
-                sessionStorage.setItem(
-                    "homeScrollY",
-                    window.scrollY.toString()
-                );
+                if (activeTab === "News Feed") {
+                    sessionStorage.setItem(
+                        "homeScrollY",
+                        window.scrollY.toString()
+                    );
+                }
                 timeoutId = null;
             }, 500);
         };
@@ -50,8 +52,16 @@ export const Home = () => {
         return () => {
             window.removeEventListener("scroll", handleScroll);
             if (timeoutId) clearTimeout(timeoutId);
+
+            // Save scroll position immediately on unmount or tab change
+            if (activeTab === "News Feed") {
+                sessionStorage.setItem(
+                    "homeScrollY",
+                    window.scrollY.toString()
+                );
+            }
         };
-    }, []);
+    }, [activeTab]);
 
     // Save posts to session storage whenever they revert/update
     useEffect(() => {
@@ -64,7 +74,7 @@ export const Home = () => {
     useEffect(() => {
         const savedScrollY = sessionStorage.getItem("homeScrollY");
 
-        if (savedScrollY && posts.length > 0) {
+        if (savedScrollY && posts.length > 0 && activeTab === "News Feed") {
             const targetY = parseInt(savedScrollY);
 
             // Check immediately
@@ -75,15 +85,11 @@ export const Home = () => {
             const maxAttempts = 50; // Try for ~2.5 seconds (50 * 50ms)
 
             const intervalId = setInterval(() => {
-                // If we successfully established the scroll position (with small tolerance)
-                // AND the document is large enough to support it
                 if (Math.abs(window.scrollY - targetY) < 10) {
                     clearInterval(intervalId);
                     return;
                 }
 
-                // If we can't scroll there yet because body is too short, this will just
-                // scroll to bottom, which is fine as intermediate step
                 window.scrollTo(0, targetY);
 
                 attempts++;
@@ -94,20 +100,14 @@ export const Home = () => {
 
             return () => clearInterval(intervalId);
         }
-    }, [posts]); // triggered when posts are loaded/restored
+    }, [posts, activeTab]);
 
     const fetchPosts = async () => {
         try {
             const res = await api.get(API_ENDPOINTS.POSTS.LIST);
             const newPosts = res.data.metadata || [];
 
-            // Only update if data changed (to prevent unnecessary re-renders/scroll jumps)
-            // But simple setPosts is usually fine as React batches.
             setPosts(newPosts);
-
-            // If we didn't have posts before, we might need to restore scroll now?
-            // Usually if we had cached posts, we already restored.
-            // If we didn't, we are at top anyway.
         } catch (err) {
             console.error(err);
         } finally {
@@ -123,15 +123,37 @@ export const Home = () => {
         });
     };
 
-    if (loading)
-        return (
-            <div className="flex h-screen items-center justify-center">
-                <div className="loader"></div>
-            </div>
-        );
+    const handleNavClick = (label) => {
+        if (label === "News Feed") {
+            if (activeTab === "News Feed") {
+                // Already on News Feed -> Refresh
+                sessionStorage.removeItem("homeScrollY");
+                window.scrollTo({ top: 0, behavior: "smooth" });
+                setLoading(true);
+                fetchPosts();
+            } else {
+                // Switching back to News Feed -> Restore scroll (handled by useEffect)
+                setActiveTab(label);
+            }
+        } else {
+            // Switching to another tab
+            setActiveTab(label);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+    };
+
+    const navItems = [
+        {
+            icon: HiSparkles,
+            label: "News Feed",
+        },
+        { icon: HiTrendingUp, label: "Explore" },
+        { icon: HiUserGroup, label: "Friends" },
+        { icon: HiCalendar, label: "Events" },
+    ];
 
     return (
-        <div className="min-h-screen bg-[#0f0f14] pt-6 text-white pb-20">
+        <div className="min-h-screen bg-[#0f0f14] pt-6 text-white pb-24 lg:pb-20">
             <div className="mx-auto grid max-w-[1240px] grid-cols-1 gap-6 px-4 lg:grid-cols-[280px_1fr_300px]">
                 {/* Left Sidebar - Navigation */}
                 <aside className="hidden lg:block sticky top-24 h-fit">
@@ -161,27 +183,19 @@ export const Home = () => {
                         )}
 
                         <nav className="space-y-1">
-                            {[
-                                {
-                                    icon: HiSparkles,
-                                    label: "News Feed",
-                                    active: true,
-                                },
-                                { icon: HiTrendingUp, label: "Explore" },
-                                { icon: HiUserGroup, label: "Friends" },
-                                { icon: HiCalendar, label: "Events" },
-                            ].map((item) => (
+                            {navItems.map((item) => (
                                 <button
                                     key={item.label}
+                                    onClick={() => handleNavClick(item.label)}
                                     className={`flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-all ${
-                                        item.active
+                                        activeTab === item.label
                                             ? "bg-[#1a1a24] text-[#a855f7]"
                                             : "text-[#a1a1aa] hover:bg-[#1a1a24] hover:text-white"
                                     }`}
                                 >
                                     <item.icon
                                         className={`h-5 w-5 ${
-                                            item.active
+                                            activeTab === item.label
                                                 ? "text-[#a855f7]"
                                                 : "text-[#71717a]"
                                         }`}
@@ -202,47 +216,75 @@ export const Home = () => {
 
                 {/* Main Feed */}
                 <main className="w-full max-w-[640px] mx-auto">
-                    {/* Create Post Input */}
-                    <div className="mb-6 rounded-xl bg-[#1a1a24] p-4 border border-[#2a2a38]">
-                        <div className="flex gap-3">
-                            <img
-                                src={
-                                    user?.avatar ||
-                                    `https://ui-avatars.com/api/?name=${
-                                        user?.name || "U"
-                                    }&background=random`
-                                }
-                                alt=""
-                                className="h-10 w-10 rounded-full object-cover"
-                            />
-                            <Link
-                                to="/create-post"
-                                className="flex-1 bg-[#2a2a38] hover:bg-[#3f3f46] text-[#6a6a7a] text-sm py-2.5 px-4 rounded-full transition-colors text-left flex items-center"
-                            >
-                                What's on your mind, {user?.name?.split(" ")[0]}
-                                ?
-                            </Link>
-                        </div>
-                    </div>
-
-                    {/* Posts */}
-                    <div className="space-y-6">
-                        {posts.length > 0 ? (
-                            posts.map((post) => (
-                                <PostCard
-                                    key={post._id}
-                                    post={post}
-                                    onDelete={handlePostDelete}
-                                />
-                            ))
-                        ) : (
-                            <div className="text-center py-12">
-                                <p className="text-[#52525b]">
-                                    No posts available
-                                </p>
+                    {activeTab === "News Feed" ? (
+                        <>
+                            {/* Create Post Input */}
+                            <div className="mb-6 rounded-xl bg-[#1a1a24] p-4 border border-[#2a2a38]">
+                                <div className="flex gap-3">
+                                    <img
+                                        src={
+                                            user?.avatar ||
+                                            `https://ui-avatars.com/api/?name=${
+                                                user?.name || "U"
+                                            }&background=random`
+                                        }
+                                        alt=""
+                                        className="h-10 w-10 rounded-full object-cover"
+                                    />
+                                    <Link
+                                        to="/create-post"
+                                        className="flex-1 bg-[#2a2a38] hover:bg-[#3f3f46] text-[#6a6a7a] text-sm py-2.5 px-4 rounded-full transition-colors text-left flex items-center"
+                                    >
+                                        What's on your mind,{" "}
+                                        {user?.name?.split(" ")[0]}?
+                                    </Link>
+                                </div>
                             </div>
-                        )}
-                    </div>
+
+                            {/* Posts */}
+                            {loading ? (
+                                <div className="flex h-40 items-center justify-center">
+                                    <div className="loader"></div>
+                                </div>
+                            ) : (
+                                <div className="space-y-6">
+                                    {posts.length > 0 ? (
+                                        posts.map((post) => (
+                                            <PostCard
+                                                key={post._id}
+                                                post={post}
+                                                onDelete={handlePostDelete}
+                                            />
+                                        ))
+                                    ) : (
+                                        <div className="text-center py-12">
+                                            <p className="text-[#52525b]">
+                                                No posts available
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </>
+                    ) : (
+                        <div className="flex h-[50vh] flex-col items-center justify-center rounded-xl bg-[#1a1a24] border border-[#2a2a38] text-center p-8">
+                            <div className="mb-4 rounded-full bg-[#2a2a38] p-4">
+                                {navItems
+                                    .find((item) => item.label === activeTab)
+                                    ?.icon({
+                                        className: "h-8 w-8 text-[#a855f7]",
+                                    })}
+                            </div>
+                            <h2 className="mb-2 text-xl font-bold text-white">
+                                {activeTab}
+                            </h2>
+                            <p className="text-[#a1a1aa]">
+                                This feature is currently under development.
+                                <br />
+                                Stay tuned for updates!
+                            </p>
+                        </div>
+                    )}
                 </main>
 
                 {/* Right Sidebar - Widgets */}
@@ -251,7 +293,7 @@ export const Home = () => {
                     <div className="rounded-xl bg-[#1a1a24] p-4 border border-[#2a2a38]">
                         <div className="mb-4 flex items-center justify-between">
                             <h3 className="text-sm font-bold text-gray-200">
-                                Upcoming Events
+                                Upcoming Events (Comming soon)
                             </h3>
                             <button className="text-xs text-[#a855f7] hover:underline">
                                 See all
@@ -312,6 +354,28 @@ export const Home = () => {
                     </div>
                 </aside>
             </div>
+
+            {/* Mobile Bottom Navigation */}
+            <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-[#2a2a38] bg-[#1a1a24] pb-safe lg:hidden">
+                <div className="flex justify-around items-center px-2 py-3">
+                    {navItems.map((item) => (
+                        <button
+                            key={item.label}
+                            onClick={() => handleNavClick(item.label)}
+                            className={`flex flex-col items-center gap-1 p-2 transition-colors ${
+                                activeTab === item.label
+                                    ? "text-[#a855f7]"
+                                    : "text-[#71717a] hover:text-white"
+                            }`}
+                        >
+                            <item.icon className="h-6 w-6" />
+                            <span className="text-[10px] font-medium">
+                                {item.label}
+                            </span>
+                        </button>
+                    ))}
+                </div>
+            </nav>
         </div>
     );
 };

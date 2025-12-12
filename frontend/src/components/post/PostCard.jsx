@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
     FaHeart,
@@ -23,6 +23,11 @@ export const PostCard = ({ post, onDelete }) => {
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [showMenu, setShowMenu] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+    useEffect(() => {
+        setIsLiked(post.isLiked || false);
+        setLikesCount(post.likesCount || 0);
+    }, [post.isLiked, post.likesCount]);
 
     const nextImage = (e) => {
         e.stopPropagation();

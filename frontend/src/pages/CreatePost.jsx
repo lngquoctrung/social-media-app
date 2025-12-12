@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { FaImage, FaTimes, FaArrowLeft } from "react-icons/fa";
-import { HiSparkles } from "react-icons/hi";
 import { useAuth } from "../context/AuthContext";
 import { ImageCropper } from "../components/post/ImageCropper";
 import api from "../api/axios";

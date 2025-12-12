@@ -17,7 +17,7 @@ import { useNavigate } from "react-router-dom";
 export const Profile = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { user: currentUser } = useAuth();
+    const { user: currentUser, updateUser } = useAuth();
     const [user, setUser] = useState(null);
     const [posts, setPosts] = useState([]);
     const [photos, setPhotos] = useState([]);
@@ -37,6 +37,11 @@ export const Profile = () => {
                 api.get(`${API_ENDPOINTS.POSTS.LIST}?userId=${id}`),
             ]);
             setUser(userRes.data.metadata);
+
+            // Sync with global auth state if viewing own profile
+            if (currentUser && userRes.data.metadata._id === currentUser._id) {
+                updateUser(userRes.data.metadata);
+            }
 
             const fetchedPosts = postsRes.data.metadata || [];
             setPosts(fetchedPosts);
