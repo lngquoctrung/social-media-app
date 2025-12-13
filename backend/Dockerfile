@@ -1,16 +1,22 @@
-# Sử dụng phiên bản Node.js mới nhất
-FROM node:18
+# Build Stage
+FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-# Copy package.json và package-lock.json trước để cài đặt dependencies
 COPY package*.json ./
-
-# Sử dụng bộ nhớ đệm cho các package đã cài đặt trước đó
 RUN npm install
 
-# Copy toàn bộ mã nguồn còn lại sau khi đã cài dependencies
 COPY . .
 
-EXPOSE 5050
-CMD ["npm", "start"]
+# Production Stage
+FROM node:18-alpine AS runner
+
+WORKDIR /app
+
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/src ./src
+
+EXPOSE 3002
+
+CMD ["node", "src/server.js"]

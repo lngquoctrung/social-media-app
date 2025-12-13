@@ -46,11 +46,11 @@ app.use((req, res, next) => next(new NotFoundError({ message: "Resource not foun
 app.use(errorMiddleware);
 
 try {
-    app.listen(config.env.PORT, config.env.HOST, async () => {
+    app.listen(config.env.PORT, "0.0.0.0", async () => {
         console.clear();
         await connectDB();
         console.log(`The server name: ${config.app.APP_NAME} - ${config.env.NODE_ENV} - v${config.app.APP_VERSION}`);
-        console.log(`Server is running on http://${config.env.HOST}:${config.env.PORT}`);
+        console.log(`Server is running on http://0.0.0.0:${config.env.PORT}`);
     });
 } catch (err) {
     console.error(`Cannot start server: ${err.message}`);

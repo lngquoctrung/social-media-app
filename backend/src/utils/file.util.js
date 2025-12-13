@@ -14,7 +14,8 @@ const moveFile = async (oldPath, newPath) => {
     const dirname = path.dirname(newPath);
     await createFolder(dirname);
 
-    await fs.rename(oldPath, newPath);
+    await fs.copyFile(oldPath, newPath);
+    await fs.unlink(oldPath);
 }
 
 const removeFile = async (filePath) => {

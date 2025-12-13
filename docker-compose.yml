@@ -1,45 +1,52 @@
-version: '3'
-
 services:
     # MongoDB Service
     mongodb:
         image: mongo:latest
-        container_name: mongodb
-        ports:
-            - '27017:27017'
+        container_name: social-media-app-mongodb
         volumes:
             - ./data/db:/data/db
-            - ./database:/data/import # Gắn thư mục chứa file JSON từ máy cục bộ
+            - ./mongo-config:/data/configdb
         environment:
-            MONGO_INITDB_DATABASE: Blog-Page
+            MONGO_INITDB_ROOT_USERNAME: ${DB_USER}
+            MONGO_INITDB_ROOT_PASSWORD: ${DB_PASSWORD}
+            MONGO_INITDB_DATABASE: ${DB_NAME}
+        networks:
+            - app_network
+        restart: unless-stopped
 
     # Express Backend Service
     express:
-        build: ./backend
-        container_name: express
-        ports:
-            - '5050:5050'
+        # image: ghcr.io/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/backend:latest
+        image: backend:latest
+        container_name: social-media-app-express
         volumes:
-            - ./backend:/app
+            - ./public:/app/public
+            - ./temp:/app/temp
+            - ./keys:/app/keys
         depends_on:
             - mongodb
-        environment:
-            - SERVER_PORT=5050
-            - MONGODB_URI=mongodb://mongodb:27017/Blog-Page
-            - SECRET_KEY_ACCESS_TOKEN=secret-key-access-token
-            - SECRET_KEY_REFRESH_TOKEN=secret-key-refresh-token
-            - CLIENT_URL=http://localhost:3000
-            - SERVER_URL=http://localhost:5050/api
+        env_file:
+            - .env
+        networks:
+            - app_network
+        restart: unless-stopped
 
     # React Frontend Service
     react:
-        build: ./frontend
-        container_name: react
+        # image: ghcr.io/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/frontend:latest
+        image: frontend:latest
+        container_name: social-media-app-react
         ports:
-            - '3000:3000'
-        volumes:
-            - ./frontend:/app
+            - "127.0.0.1:3001:80"
         depends_on:
             - express
-        environment:
-            - REACT_APP_API_URL=http://localhost:5050/api
+        volumes:
+            - ./public:/app/public
+        networks:
+            - app_network
+        restart: unless-stopped
+
+networks:
+    app_network:
+        driver: bridge
+        name: social-media-app-network

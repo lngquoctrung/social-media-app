@@ -162,16 +162,14 @@ class PostService {
     }
 
     createPost = async (userId, data) => {
-        const apiPrefix = `${config.app.API_PREFIX}/${config.app.API_VERSION}`;
         const imageUrls = [];
 
         if (data?.images && data.images.length > 0) {
             await Promise.all(data.images.map(async (filename) => {
                 const tempPath = path.join(config.uploader.tempFolders.post, filename);
                 const destPath = path.join(config.uploader.post.destination, filename);
-                const protocol = config.env.NODE_ENV === "development" ? "http" : "https";
 
-                const imageUrl = `${protocol}://${config.env.HOST}:${config.env.PORT}/${apiPrefix}/public/images/posts/${filename}`;
+                const imageUrl = `/public/images/posts/${filename}`;
                 imageUrls.push(imageUrl);
 
                 await moveFile(tempPath, destPath);

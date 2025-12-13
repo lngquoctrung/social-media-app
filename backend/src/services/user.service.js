@@ -12,9 +12,7 @@ class UserService {
     }
 
     uploadAvatarImage = async (userId, file) => {
-        const apiPrefix = `${config.app.API_PREFIX}/${config.app.API_VERSION}`;
-        const protocol = config.env.NODE_ENV === "development" ? "http" : "https";
-        const avatarUrl = `${protocol}://${config.env.HOST}:${config.env.PORT}/${apiPrefix}/public/images/avatars/${file.filename}`;
+        const avatarUrl = `/public/images/avatars/${file.filename}`;
 
         const user = await userModel.findByIdAndUpdate(userId, { avatar: avatarUrl }, { new: true }).select("-password -role -createdAt -updatedAt").lean();
         if (!user) throw new NotFoundError({ message: "User not found" });
