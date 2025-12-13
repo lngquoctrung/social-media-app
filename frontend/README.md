@@ -1,16 +1,96 @@
-# React + Vite
+# Social Media App - Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Welcome to the frontend of the Social Media App. This is a modern single-page application (SPA) built with React 19, Vite, and Tailwind CSS 4, offering a responsive and interactive user experience.
 
-Currently, two official plugins are available:
+## 🚀 Tech Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+-   **Framework**: [React 19](https://react.dev/)
+-   **Build Tool**: [Vite](https://vitejs.dev/)
+-   **Styling**: [Tailwind CSS v4](https://tailwindcss.com/) with `clsx` and `tailwind-merge`
+-   **Routing**: [React Router](https://reactrouter.com/) (v7)
+-   **HTTP Client**: [Axios](https://axios-http.com/)
+-   **Icons**: [React Icons](https://react-icons.github.io/react-icons/)
 
-## React Compiler
+## 🛠️ Prerequisites
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+-   **Node.js**: v14.x or higher
+-   **npm**: v6.x or higher
 
-## Expanding the ESLint configuration
+## 🔧 Installation
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+1.  Navigate to the frontend directory:
+
+    ```bash
+    cd frontend
+    ```
+
+2.  Install dependencies:
+    ```bash
+    npm install
+    ```
+
+## ⚙️ Configuration
+
+1.  Create a `.env` file in the root of the `frontend` directory based on `.env.example`.
+
+    ```bash
+    cp .env.example .env
+    ```
+
+2.  Update the configuration if your backend runs on a different URL:
+    -   `VITE_API_URL`: URL of the backend API (default: `http://localhost:3000`).
+
+## 🏃‍♂️ Running the App
+
+### Development Mode
+
+To start the development server with hot module replacement (HMR):
+
+```bash
+npm run dev
+```
+
+The app will be available at `http://localhost:5173`.
+
+### Production Build
+
+To create a production-ready build:
+
+```bash
+npm run build
+```
+
+The build artifacts will be generated in the `dist` directory.
+
+### Preview Production Build
+
+To locally preview the production build:
+
+```bash
+npm run preview
+```
+
+## 📂 Project Structure
+
+```
+src/
+├── api/            # API endpoints and Axios instance configuration
+├── assets/         # Static assets (images, fonts, etc.)
+├── components/     # Reusable UI components
+│   ├── common/     # Generic components (Modal, Button, etc.)
+│   ├── layout/     # Layout components (Navbar, Sidebar)
+│   ├── post/       # Post-specific components (PostCard)
+│   └── ui/         # Design system primitives (Toast)
+├── context/        # React Context providers (Auth, Toast)
+├── pages/          # Application pages/views (Home, Login, Profile, etc.)
+├── App.jsx         # Main application component & routing
+└── main.jsx        # Application entry point
+```
+
+## 🎨 Features
+
+-   **Responsive Design**: Mobile-first approach using Tailwind CSS.
+-   **Authentication**: Login, Register to access protected features.
+-   **Feed**: Infinite scroll-like feed of posts.
+-   **Interactions**: Like, Comment, and Share posts.
+-   **Toast Notifications**: Custom toast system for user feedback.

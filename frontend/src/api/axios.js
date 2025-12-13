@@ -25,9 +25,6 @@ api.interceptors.response.use(
                 // Retry original request
                 return api(originalRequest);
             } catch (refreshError) {
-                // If refresh fails, user needs to login
-                // Redirect to login or clear auth state if possible (but we are in axios file)
-                // Window redirect is a fallback
                 if (window.location.pathname !== '/login') {
                     window.location.href = '/login';
                 }
