@@ -6,7 +6,6 @@ temp/
 keys/
 mongo-config/
 backend-prod/
-.github/
 
 .env
 host_nginx_example.conf
