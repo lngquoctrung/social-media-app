@@ -214,7 +214,7 @@ class PostService {
 
                 await moveFile(tempPath, destPath);
 
-                const newUrl = `${config.auth.STORAGE_URL}/${apiPrefix}/public/images/posts/${filename}`;
+                const newUrl = `/public/images/posts/${filename}`;
                 finalImageUrls.push(newUrl);
             }
         }
