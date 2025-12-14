@@ -1,11 +1,14 @@
 node_modules
 data/
-database/
-public/
+**/public/
 temp/
 keys/
 mongo-config/
-backend-prod/
+!backend/public/
+!backend/public/defaults/
+!backend/public/defaults/**
+backend/public/images
+backend/public/videos
 
 .env
 host_nginx_example.conf
