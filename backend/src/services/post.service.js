@@ -205,7 +205,7 @@ class PostService {
         const finalImageUrls = [];
 
         for (const item of incomingImages) {
-            if (item.startsWith("http")) {
+            if (item.startsWith("http") || item.startsWith("/public/")) {
                 finalImageUrls.push(item);
             } else {
                 const filename = item;
