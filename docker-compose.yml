@@ -16,8 +16,7 @@ services:
 
     # Express Backend Service
     express:
-        # image: ghcr.io/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/backend:latest
-        image: backend:latest
+        image: ghcr.io/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/backend:latest
         container_name: social-media-app-express
         volumes:
             - ./public:/app/public
@@ -33,8 +32,7 @@ services:
 
     # React Frontend Service
     react:
-        # image: ghcr.io/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/frontend:latest
-        image: frontend:latest
+        image: ghcr.io/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/frontend:latest
         container_name: social-media-app-react
         ports:
             - "127.0.0.1:3001:80"
