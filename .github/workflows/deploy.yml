@@ -84,7 +84,7 @@ jobs:
                   key: ${{ secrets.VPS_SSH_KEY }}
                   script: |
                       export GITHUB_REPO_OWNER=${{ github.repository_owner }}
-                      export GITHUB_REPO_NAME=${{ github.repository }}
+                      export GITHUB_REPO_NAME=${{ github.event.repository.name }}
 
                       mkdir -p ${{ secrets.PROJECT_PATH }}
                       cd ${{ secrets.PROJECT_PATH }}
