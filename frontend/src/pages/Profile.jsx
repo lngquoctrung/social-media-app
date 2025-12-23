@@ -66,7 +66,7 @@ export const Profile = () => {
         if (lastPostElementRef.current) {
             observer.current.observe(lastPostElementRef.current);
         }
-    }, [loading, hasMore]);
+    }, [loading, hasMore, posts]);
 
     const fetchUserInfo = async () => {
         try {

@@ -76,7 +76,7 @@ export const Home = () => {
         if (lastPostElementRef.current) {
             observer.current.observe(lastPostElementRef.current);
         }
-    }, [loading, hasMore]);
+    }, [loading, hasMore, posts]);
 
     useEffect(() => {
         if (page > 1) {
