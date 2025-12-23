@@ -31,36 +31,94 @@ export const Profile = () => {
     const [selectedImage, setSelectedImage] = useState(null);
     const avatarInputRef = useRef(null);
 
+    const [page, setPage] = useState(1);
+    const [hasMore, setHasMore] = useState(true);
+    const observer = useRef();
+    const lastPostElementRef = useRef();
+
     const isOwnProfile = currentUser?._id === id;
 
     useEffect(() => {
-        fetchProfileData();
+        setPage(1);
+        setPosts([]);
+        setHasMore(true);
+        fetchUserInfo();
+        fetchUserPosts(1);
     }, [id]);
 
-    const fetchProfileData = async () => {
+    useEffect(() => {
+        if (page > 1) {
+            fetchUserPosts(page);
+        }
+    }, [page]);
+
+    // Infinite Scroll Observer
+    useEffect(() => {
+        if (loading) return;
+        if (observer.current) observer.current.disconnect();
+
+        observer.current = new IntersectionObserver((entries) => {
+            if (entries[0].isIntersecting && hasMore) {
+                setPage((prevPage) => prevPage + 1);
+            }
+        });
+
+        if (lastPostElementRef.current) {
+            observer.current.observe(lastPostElementRef.current);
+        }
+    }, [loading, hasMore]);
+
+    const fetchUserInfo = async () => {
         try {
-            const [userRes, postsRes] = await Promise.all([
-                api.get(API_ENDPOINTS.USERS.GET_ONE(id)),
-                api.get(`${API_ENDPOINTS.POSTS.LIST}?userId=${id}`),
-            ]);
+            const userRes = await api.get(API_ENDPOINTS.USERS.GET_ONE(id));
             setUser(userRes.data.metadata);
 
             // Sync with global auth state if viewing own profile
             if (currentUser && userRes.data.metadata._id === currentUser._id) {
                 updateUser(userRes.data.metadata);
             }
+        } catch (error) {
+            console.error(error);
+        }
+    };
 
-            const fetchedPosts = postsRes.data.metadata || [];
-            setPosts(fetchedPosts);
+    const fetchUserPosts = async (pageNum) => {
+        try {
+            setLoading(true);
+            const postsRes = await api.get(
+                `${API_ENDPOINTS.POSTS.LIST}?userId=${id}&page=${pageNum}&limit=5`
+            );
+            const { posts: newPosts = [], total = 0 } =
+                postsRes.data?.metadata || {};
 
-            // Extract images from posts
-            const allImages = fetchedPosts.reduce((acc, post) => {
+            setPosts((prev) => {
+                if (pageNum === 1) return newPosts;
+                if (!prev) return newPosts;
+                const existingIds = new Set(prev.map((p) => p._id));
+                const uniqueNewPosts = newPosts.filter(
+                    (p) => !existingIds.has(p._id)
+                );
+                return [...prev, ...uniqueNewPosts];
+            });
+
+            // Extract images from posts for the photo grid (accumulate them)
+            const newImages = newPosts.reduce((acc, post) => {
                 if (post.images && post.images.length > 0) {
                     return [...acc, ...post.images];
                 }
                 return acc;
             }, []);
-            setPhotos(allImages);
+
+            setPhotos((prev) => {
+                if (pageNum === 1) return newImages;
+                return [...prev, ...newImages];
+            });
+
+            const currentTotal =
+                pageNum === 1
+                    ? newPosts.length
+                    : posts.length + newPosts.length;
+            setHasMore(currentTotal < total && newPosts.length > 0);
         } catch (error) {
             console.error(error);
         } finally {
@@ -462,12 +520,25 @@ export const Profile = () => {
                             </p>
                         </div>
                     ) : (
-                        posts.map((post) => (
-                            <PostCard
-                                key={post._id}
-                                post={post}
-                            />
-                        ))
+                        posts.map((post, index) => {
+                            if (posts.length === index + 1) {
+                                return (
+                                    <div
+                                        ref={lastPostElementRef}
+                                        key={post._id}
+                                    >
+                                        <PostCard post={post} />
+                                    </div>
+                                );
+                            } else {
+                                return (
+                                    <PostCard
+                                        key={post._id}
+                                        post={post}
+                                    />
+                                );
+                            }
+                        })
                     )}
                 </div>
             </div>

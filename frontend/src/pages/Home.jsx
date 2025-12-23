@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import api from "../api/axios";
 import { API_ENDPOINTS } from "../api/endpoints";
@@ -17,12 +17,17 @@ export const Home = () => {
     const [posts, setPosts] = useState(() => {
         // Initialize from session storage if available
         const savedPosts = sessionStorage.getItem("homePosts");
-        return savedPosts ? JSON.parse(savedPosts) : [];
+        return savedPosts ? JSON.parse(savedPosts) || [] : [];
     });
     const [loading, setLoading] = useState(() => {
         // If we have posts, we are not initially loading (we show cached content first)
         return !sessionStorage.getItem("homePosts");
     });
+
+    const [page, setPage] = useState(1);
+    const [hasMore, setHasMore] = useState(true);
+    const observer = useRef();
+    const lastPostElementRef = useRef();
 
     useEffect(() => {
         // Prevent browser from restoring scroll automatically
@@ -30,7 +35,7 @@ export const Home = () => {
             window.history.scrollRestoration = "manual";
         }
 
-        if (!authLoading) {
+        if (!authLoading && activeTab === "News Feed") {
             fetchPosts();
         }
 
@@ -55,7 +60,29 @@ export const Home = () => {
             window.removeEventListener("scroll", handleScroll);
             if (timeoutId) clearTimeout(timeoutId);
         };
-    }, [activeTab, authLoading]);
+    }, [authLoading, activeTab]); // Dependencies adjusted
+
+    // Infinite Scroll Observer
+    useEffect(() => {
+        if (loading) return;
+        if (observer.current) observer.current.disconnect();
+
+        observer.current = new IntersectionObserver((entries) => {
+            if (entries[0].isIntersecting && hasMore) {
+                setPage((prevPage) => prevPage + 1);
+            }
+        });
+
+        if (lastPostElementRef.current) {
+            observer.current.observe(lastPostElementRef.current);
+        }
+    }, [loading, hasMore]);
+
+    useEffect(() => {
+        if (page > 1) {
+            fetchPosts();
+        }
+    }, [page]);
 
     // Save posts to session storage whenever they revert/update
     useEffect(() => {
@@ -68,7 +95,13 @@ export const Home = () => {
     useEffect(() => {
         const savedScrollY = sessionStorage.getItem("homeScrollY");
 
-        if (savedScrollY && posts.length > 0 && activeTab === "News Feed") {
+        if (
+            savedScrollY &&
+            posts.length > 0 &&
+            activeTab === "News Feed" &&
+            page === 1
+        ) {
+            // Only restore if we are at page 1 (initial load/cache)
             const targetY = parseInt(savedScrollY);
 
             // Check immediately
@@ -98,10 +131,25 @@ export const Home = () => {
 
     const fetchPosts = async () => {
         try {
-            const res = await api.get(API_ENDPOINTS.POSTS.LIST);
-            const newPosts = res.data.metadata || [];
+            const res = await api.get(
+                `${API_ENDPOINTS.POSTS.LIST}?page=${page}&limit=5`
+            );
+            const { posts: newPosts = [], total = 0 } =
+                res.data?.metadata || {};
 
-            setPosts(newPosts);
+            setPosts((prev) => {
+                if (page === 1) return newPosts;
+                if (!prev) return newPosts;
+                const existingIds = new Set(prev.map((p) => p._id));
+                const uniqueNewPosts = newPosts.filter(
+                    (p) => !existingIds.has(p._id)
+                );
+                return [...prev, ...uniqueNewPosts];
+            });
+
+            const currentTotal =
+                page === 1 ? newPosts.length : posts.length + newPosts.length;
+            setHasMore(currentTotal < total && newPosts.length > 0);
         } catch (err) {
             console.error(err);
         } finally {
@@ -123,7 +171,9 @@ export const Home = () => {
                 // Already on News Feed -> Refresh
                 sessionStorage.removeItem("homeScrollY");
                 window.scrollTo({ top: 0, behavior: "smooth" });
-                setLoading(true);
+                setPage(1);
+                setHasMore(true);
+                // fetchPosts will be called by useEffect when page changes or we can call it here if we handle state carefully
                 fetchPosts();
             } else {
                 // Switching back to News Feed -> Restore scroll (handled by useEffect)
@@ -249,13 +299,33 @@ export const Home = () => {
                             ) : (
                                 <div className="space-y-6">
                                     {posts.length > 0 ? (
-                                        posts.map((post) => (
-                                            <PostCard
-                                                key={post._id}
-                                                post={post}
-                                                onDelete={handlePostDelete}
-                                            />
-                                        ))
+                                        posts.map((post, index) => {
+                                            if (posts.length === index + 1) {
+                                                return (
+                                                    <div
+                                                        ref={lastPostElementRef}
+                                                        key={post._id}
+                                                    >
+                                                        <PostCard
+                                                            post={post}
+                                                            onDelete={
+                                                                handlePostDelete
+                                                            }
+                                                        />
+                                                    </div>
+                                                );
+                                            } else {
+                                                return (
+                                                    <PostCard
+                                                        key={post._id}
+                                                        post={post}
+                                                        onDelete={
+                                                            handlePostDelete
+                                                        }
+                                                    />
+                                                );
+                                            }
+                                        })
                                     ) : (
                                         <div className="text-center py-12">
                                             <p className="text-[#52525b]">

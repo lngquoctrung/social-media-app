@@ -1,7 +1,6 @@
 import axios from 'axios';
 
 const api = axios.create({
-    // baseURL: import.meta.env.VITE_API_URL,
     headers: {
         'Content-Type': 'application/json',
     },
@@ -15,7 +14,7 @@ api.interceptors.response.use(
         const originalRequest = error.config;
 
         // If error is 401 and we haven't tried to refresh yet
-        if (error.response?.status === 401 && !originalRequest._retry) {
+        if (error.response?.status === 401 && !originalRequest._retry && !originalRequest.url.includes('/access/refresh')) {
             originalRequest._retry = true;
 
             try {

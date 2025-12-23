@@ -5,10 +5,18 @@ const { BadRequestError } = require("../core/error.response");
 const getAllPosts = async (req, res) => {
 	const currentUserId = req.user?.userId;
 	const filterUserId = req.query.userId;
-	const posts = await postService.getAllPosts(currentUserId, filterUserId);
+	const page = parseInt(req.query.page) || 1;
+	const limit = parseInt(req.query.limit) || 10;
+
+	const { posts, total } = await postService.getAllPosts(currentUserId, filterUserId, page, limit);
 	new Ok({
 		message: "Get all posts successfully",
-		metadata: posts,
+		metadata: {
+			posts,
+			total,
+			page,
+			limit
+		},
 	}).send(res);
 };
 

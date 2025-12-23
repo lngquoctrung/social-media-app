@@ -18,7 +18,7 @@ const app = express();
 const apiPath = `/${config.app.API_PREFIX}/${config.app.API_VERSION}`;
 
 // Public router
-app.use(`${apiPath}/public`, express.static(path.join(__dirname, "..", "public")));
+app.use("/public", express.static(path.join(__dirname, "..", "public")));
 
 // Middlewares
 app.use((req, res, next) => {
