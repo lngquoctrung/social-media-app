@@ -7,6 +7,7 @@ mongo-config/
 !backend/public/
 !backend/public/defaults/
 !backend/public/defaults/**
+!frontend/public/
 backend/public/images
 backend/public/videos
 
