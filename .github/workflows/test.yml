@@ -1,0 +1,74 @@
+name: E2E Tests
+
+on:
+    push:
+        branches: [main, production]
+    pull_request:
+        branches: [main, production]
+
+jobs:
+    test:
+        timeout-minutes: 60
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Create .env file for Docker
+              run: |
+                  cat <<EOF > .env
+                  PORT=3002
+                  HOST=express
+                  NODE_ENV=development
+                  ALLOWED_URLS=http://localhost:3001
+                  DB_HOST=mongodb
+                  DB_PORT=27017
+                  DB_USER=testuser
+                  DB_PASSWORD=testpassword
+                  DB_NAME=testdb
+                  EOF
+
+            - name: Build and Start Docker Compose
+              run: |
+                  # Build images and start containers
+                  docker compose -f docker-compose.test.yml build
+                  docker compose -f docker-compose.test.yml up -d
+
+            - name: Wait for services to be healthy
+              run: |
+                  echo "Waiting for services to be ready..."
+                  # Simple wait, but ideally you'd use a healthcheck script
+                  sleep 30
+                  docker ps
+
+            - name: Setup Node.js for Playwright
+              uses: actions/setup-node@v4
+              with:
+                  node-version: lts/*
+
+            - name: Install dependencies for E2E
+              working-directory: ./e2e
+              run: npm ci
+
+            - name: Install Playwright Browsers
+              working-directory: ./e2e
+              run: npx playwright install --with-deps chromium
+
+            - name: Run Playwright tests
+              working-directory: ./e2e
+              run: npx playwright test
+              env:
+                  BASE_URL: http://localhost:3001
+
+            - name: Upload Playwright report
+              uses: actions/upload-artifact@v4
+              if: always()
+              with:
+                  name: playwright-report
+                  path: e2e/playwright-report/
+                  retention-days: 30
+
+            - name: Tear down Docker
+              if: always()
+              run: docker compose -f docker-compose.test.yml down -v

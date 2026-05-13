@@ -17,8 +17,6 @@ export const AuthProvider = ({ children }) => {
             }
 
             try {
-                // Verify the token by fetching current user
-                // This will trigger the axios interceptor if token is expired
                 const res = await api.get(API_ENDPOINTS.USERS.ME);
                 setUser(res.data.metadata);
             } catch (error) {

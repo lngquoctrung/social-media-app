@@ -1,0 +1,14 @@
+{
+  "name": "e2e-tests",
+  "version": "1.0.0",
+  "description": "E2E tests for Social Media App",
+  "scripts": {
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "test:headed": "playwright test --headed"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.43.0",
+    "@types/node": "^20.12.7"
+  }
+}

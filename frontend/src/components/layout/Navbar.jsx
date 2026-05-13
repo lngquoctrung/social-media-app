@@ -1,7 +1,6 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { FaSignOutAlt, FaBell, FaSearch } from "react-icons/fa";
-import { HiSparkles } from "react-icons/hi";
 
 export const Navbar = () => {
     const { user, logout } = useAuth();
@@ -20,11 +19,11 @@ export const Navbar = () => {
                     to="/"
                     className="flex items-center gap-2"
                 >
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-br from-indigo-500 to-pink-500 shadow-lg shadow-indigo-500/20">
+                    {/* <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-br from-indigo-500 to-pink-500 shadow-lg shadow-indigo-500/20">
                         <HiSparkles className="h-6 w-6 text-white" />
-                    </div>
+                    </div> */}
                     <span className="hidden text-xl font-bold tracking-tight text-white md:block">
-                        Connected
+                        Connection
                     </span>
                 </NavLink>
 

@@ -20,7 +20,6 @@ export const Home = () => {
         return savedPosts ? JSON.parse(savedPosts) || [] : [];
     });
     const [loading, setLoading] = useState(() => {
-        // If we have posts, we are not initially loading (we show cached content first)
         return !sessionStorage.getItem("homePosts");
     });
 
@@ -30,7 +29,6 @@ export const Home = () => {
     const lastPostElementRef = useRef();
 
     useEffect(() => {
-        // Prevent browser from restoring scroll automatically
         if ("scrollRestoration" in window.history) {
             window.history.scrollRestoration = "manual";
         }

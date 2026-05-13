@@ -1,0 +1,50 @@
+services:
+    mongodb:
+        image: mongo:latest
+        container_name: social-media-app-mongodb-test
+        environment:
+            MONGO_INITDB_ROOT_USERNAME: ${DB_USER}
+            MONGO_INITDB_ROOT_PASSWORD: ${DB_PASSWORD}
+            MONGO_INITDB_DATABASE: ${DB_NAME}
+        networks:
+            - app_network_test
+        restart: unless-stopped
+
+    express:
+        build:
+            context: ./backend
+            dockerfile: Dockerfile
+        container_name: social-media-app-express-test
+        depends_on:
+            - mongodb
+        environment:
+            PORT: 3002
+            HOST: express
+            NODE_ENV: development
+            ALLOWED_URLS: http://localhost:3001
+            DB_HOST: mongodb
+            DB_PORT: 27017
+            DB_USER: ${DB_USER}
+            DB_PASSWORD: ${DB_PASSWORD}
+            DB_NAME: ${DB_NAME}
+        networks:
+            - app_network_test
+        restart: unless-stopped
+
+    react:
+        build:
+            context: ./frontend
+            dockerfile: Dockerfile
+        container_name: social-media-app-react-test
+        ports:
+            - "127.0.0.1:3001:80"
+        depends_on:
+            - express
+        networks:
+            - app_network_test
+        restart: unless-stopped
+
+networks:
+    app_network_test:
+        driver: bridge
+        name: social-media-app-network-test
