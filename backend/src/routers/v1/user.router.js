@@ -23,8 +23,19 @@ router.put("/me/avatar",
     asyncHandler(userController.uploadAvatarImage)
 );
 
+router.post("/:id/follow",
+    authMiddleware,
+    asyncHandler(userController.toggleFollow)
+);
+router.get("/:id/followers",
+    asyncHandler(userController.getFollowers)
+);
+router.get("/:id/following",
+    asyncHandler(userController.getFollowing)
+);
+
 router.get("/:id",
-    // authMiddleware, // access control can be added later
+    authMiddleware.optional,
     asyncHandler(userController.getUserById)
 );
 

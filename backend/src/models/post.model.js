@@ -12,6 +12,11 @@ const postSchema = new mongoose.Schema({
 		type: mongoose.Schema.Types.ObjectId,
 		ref: "User",
 	},
+	privacy: {
+		type: String,
+		enum: ['public', 'private'],
+		default: 'public',
+	},
 	createdAt: {
 		type: Date,
 		default: Date.now,
