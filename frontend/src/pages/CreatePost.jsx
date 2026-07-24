@@ -16,6 +16,7 @@ export const CreatePost = () => {
     const [existingImages, setExistingImages] = useState([]); // URLs (Existing images)
     const [currentCropIndex, setCurrentCropIndex] = useState(0);
     const [caption, setCaption] = useState("");
+    const [privacy, setPrivacy] = useState("public");
     const [loading, setLoading] = useState(false);
     const [initialLoading, setInitialLoading] = useState(isEditMode);
     const [progress, setProgress] = useState("");
@@ -35,6 +36,7 @@ export const CreatePost = () => {
             const res = await api.get(API_ENDPOINTS.POSTS.DETAIL(id));
             const post = res.data.metadata;
             setCaption(post.content);
+            setPrivacy(post.privacy || "public");
             setExistingImages(post.images || []);
             setStep(3); // Jump to details step
         } catch (error) {
@@ -210,11 +212,13 @@ export const CreatePost = () => {
                 await api.put(API_ENDPOINTS.POSTS.UPDATE(id), {
                     content: caption,
                     images: finalImages,
+                    privacy,
                 });
             } else {
                 await api.post(API_ENDPOINTS.POSTS.CREATE, {
                     content: caption,
                     images: finalImages,
+                    privacy,
                 });
             }
 
@@ -438,6 +442,17 @@ export const CreatePost = () => {
                                 className="flex-1 resize-none bg-transparent text-white placeholder-[#6a6a7a] focus:outline-none"
                                 rows={6}
                             />
+                            <div className="mt-2 mb-2 flex items-center justify-between border-t border-[#3a3a4a] pt-4">
+                                <span className="text-sm font-medium text-white">Privacy</span>
+                                <select
+                                    value={privacy}
+                                    onChange={(e) => setPrivacy(e.target.value)}
+                                    className="bg-[#2a2a38] text-white text-sm rounded-lg border border-[#3a3a4a] p-1.5 focus:outline-none focus:border-[#a855f7]"
+                                >
+                                    <option value="public">Public</option>
+                                    <option value="private">Private (Followers only)</option>
+                                </select>
+                            </div>
                             <div className="mt-2 flex items-center justify-between text-xs text-[#6a6a7a]">
                                 <span>{caption.length}/2,200</span>
                                 {progress && (

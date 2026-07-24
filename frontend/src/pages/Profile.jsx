@@ -6,6 +6,7 @@ import { API_ENDPOINTS } from "../api/endpoints";
 import { PostCard } from "../components/post/PostCard";
 import EditProfileModal from "../components/profile/EditProfileModal";
 import AvatarUploadModal from "../components/profile/AvatarUploadModal";
+import FollowListModal from "../components/profile/FollowListModal";
 import {
     FaEdit,
     FaCamera,
@@ -29,6 +30,7 @@ export const Profile = () => {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isCropModalOpen, setIsCropModalOpen] = useState(false);
     const [selectedImage, setSelectedImage] = useState(null);
+    const [isFollowModalOpen, setIsFollowModalOpen] = useState({ type: null, open: false });
     const avatarInputRef = useRef(null);
 
     const [page, setPage] = useState(1);
@@ -123,6 +125,21 @@ export const Profile = () => {
             console.error(error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleToggleFollow = async () => {
+        if (!currentUser) return navigate("/login");
+        try {
+            const res = await api.post(API_ENDPOINTS.USERS.TOGGLE_FOLLOW(id));
+            const isFollowing = res.data.metadata.followed;
+            setUser((prev) => ({
+                ...prev,
+                isFollowing,
+                followersCount: isFollowing ? (prev.followersCount || 0) + 1 : (prev.followersCount || 1) - 1
+            }));
+        } catch (error) {
+            console.error("Failed to toggle follow", error);
         }
     };
 
@@ -263,6 +280,14 @@ export const Profile = () => {
                 onUpload={handleSaveAvatar}
                 isLoading={isUploadingAvatar}
             />
+            {isFollowModalOpen.open && (
+                <FollowListModal
+                    isOpen={isFollowModalOpen.open}
+                    onClose={() => setIsFollowModalOpen({ type: null, open: false })}
+                    type={isFollowModalOpen.type}
+                    userId={id}
+                />
+            )}
             <input
                 type="file"
                 ref={avatarInputRef}
@@ -325,6 +350,16 @@ export const Profile = () => {
                                             .toLowerCase()
                                             .replace(/\s/g, "")}
                                 </p>
+                                <div className="mt-3 flex items-center justify-center gap-6 md:justify-start">
+                                    <div className="text-center cursor-pointer hover:underline" onClick={() => setIsFollowModalOpen({ type: 'followers', open: true })}>
+                                        <span className="block font-bold text-white">{user.followersCount || 0}</span>
+                                        <span className="text-xs text-gray-400 uppercase tracking-wider">Followers</span>
+                                    </div>
+                                    <div className="text-center cursor-pointer hover:underline" onClick={() => setIsFollowModalOpen({ type: 'following', open: true })}>
+                                        <span className="block font-bold text-white">{user.followingCount || 0}</span>
+                                        <span className="text-xs text-gray-400 uppercase tracking-wider">Following</span>
+                                    </div>
+                                </div>
                             </div>
 
                             {/* Action Buttons */}
@@ -339,14 +374,12 @@ export const Profile = () => {
                                 ) : (
                                     <>
                                         <button
-                                            onClick={() =>
-                                                currentUser
-                                                    ? null
-                                                    : navigate("/login")
-                                            }
-                                            className="rounded-lg bg-[#6366f1] px-6 py-2 font-semibold text-white hover:bg-[#4f46e5] transition-colors"
+                                            onClick={handleToggleFollow}
+                                            className={`rounded-lg px-6 py-2 font-semibold text-white transition-colors ${
+                                                user.isFollowing ? "bg-[#3f3f46] hover:bg-[#52525b]" : "bg-[#6366f1] hover:bg-[#4f46e5]"
+                                            }`}
                                         >
-                                            Follow
+                                            {user.isFollowing ? "Following" : "Follow"}
                                         </button>
                                         <button
                                             onClick={() =>
