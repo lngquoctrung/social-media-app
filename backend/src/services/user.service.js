@@ -75,6 +75,31 @@ class UserService {
         const follow = await followModel.findOne({ follower: currentUserId, following: targetUserId });
         return !!follow;
     }
+
+    getMutualFriends = async (userId) => {
+        const following = await followModel.find({ follower: userId }).lean();
+        const followingIds = following.map(f => f.following);
+
+        const mutualFollows = await followModel.find({
+            following: userId,
+            follower: { $in: followingIds }
+        }).populate('follower', 'name avatar email _id').lean();
+
+        return mutualFollows.map(f => f.follower);
+    }
+
+    getRecommendedFriends = async (userId) => {
+        const following = await followModel.find({ follower: userId }).lean();
+        const followingIds = following.map(f => f.following);
+
+        const excludedIds = [...followingIds, userId];
+
+        const recommendations = await userModel.find({
+            _id: { $nin: excludedIds }
+        }).select('name avatar email _id').limit(10).lean();
+
+        return recommendations;
+    }
 }
 
 module.exports = new UserService();

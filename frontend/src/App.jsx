@@ -6,51 +6,61 @@ import { Home } from "./pages/Home";
 import { CreatePost } from "./pages/CreatePost";
 import { PostDetail } from "./pages/PostDetail";
 import { Profile } from "./pages/Profile";
+import { Settings } from "./pages/Settings";
 
 import { ScrollToTop } from "./components/common/ScrollToTop";
 import { ToastProvider } from "./context/ToastContext";
+import { ThemeProvider } from "./context/ThemeContext";
 
 function App() {
     return (
-        <ToastProvider>
-            <div className="min-h-screen">
-                <ScrollToTop />
-                <Navbar />
-                <main>
-                    <Routes>
-                        <Route
-                            path="/"
-                            element={<Home />}
-                        />
-                        <Route
-                            path="/login"
-                            element={<Login />}
-                        />
-                        <Route
-                            path="/register"
-                            element={<Register />}
-                        />
-                        <Route
-                            path="/create-post"
-                            element={<CreatePost />}
-                        />
-                        <Route
-                            path="/post/edit/:id"
-                            element={<CreatePost />}
-                        />
-                        <Route
-                            path="/post/:id"
-                            element={<PostDetail />}
-                        />
-                        <Route
-                            path="/profile/:id"
-                            element={<Profile />}
-                        />
-                    </Routes>
-                </main>
-            </div>
-        </ToastProvider>
+        <ThemeProvider>
+            <ToastProvider>
+                <div className="min-h-screen">
+                    <ScrollToTop />
+                    <Navbar />
+                    <main>
+                        <Routes>
+                            <Route
+                                path="/"
+                                element={<Home />}
+                            />
+                            <Route
+                                path="/login"
+                                element={<Login />}
+                            />
+                            <Route
+                                path="/register"
+                                element={<Register />}
+                            />
+                            <Route
+                                path="/create-post"
+                                element={<CreatePost />}
+                            />
+                            <Route
+                                path="/post/edit/:id"
+                                element={<CreatePost />}
+                            />
+                            <Route
+                                path="/post/:id"
+                                element={<PostDetail />}
+                            />
+                            <Route
+                                path="/profile/:id"
+                                element={<Profile />}
+                            />
+                            <Route
+                                path="/settings"
+                                element={<Settings />}
+                            />
+                        </Routes>
+                    </main>
+                </div>
+            </ToastProvider>
+        </ThemeProvider>
     );
 }
+
+
 
 export default App;

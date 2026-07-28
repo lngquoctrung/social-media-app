@@ -5,11 +5,12 @@ import { API_ENDPOINTS } from "../api/endpoints";
 import { PostCard } from "../components/post/PostCard";
 import {
     HiSparkles,
-    HiTrendingUp,
+    HiChat,
     HiUserGroup,
-    HiCalendar,
+    HiBell,
 } from "react-icons/hi";
 import { useAuth } from "../context/AuthContext";
+import { FriendsTab } from "../components/home/FriendsTab";
 
 export const Home = () => {
     const { user, loading: authLoading } = useAuth();
@@ -195,10 +196,11 @@ export const Home = () => {
             icon: HiSparkles,
             label: "News Feed",
         },
-        { icon: HiTrendingUp, label: "Explore" },
+        { icon: HiChat, label: "Message" },
         { icon: HiUserGroup, label: "Friends" },
-        { icon: HiCalendar, label: "Events" },
+        { icon: HiBell, label: "Notifications" },
     ];
+
 
     return (
         <div className="min-h-screen bg-[#0f0f14] pt-6 text-white pb-24 lg:pb-20">
@@ -334,6 +336,8 @@ export const Home = () => {
                                 </div>
                             )}
                         </>
+                    ) : activeTab === "Friends" ? (
+                        <FriendsTab />
                     ) : (
                         <div className="flex h-[50vh] flex-col items-center justify-center rounded-xl bg-[#1a1a24] border border-[#2a2a38] text-center p-8">
                             <div className="mb-4 rounded-full bg-[#2a2a38] p-4">
@@ -357,42 +361,6 @@ export const Home = () => {
 
                 {/* Right Sidebar - Widgets */}
                 <aside className="hidden lg:block sticky top-24 h-fit space-y-6">
-                    {/* Upcoming Events */}
-                    <div className="rounded-xl bg-[#1a1a24] p-4 border border-[#2a2a38]">
-                        <div className="mb-4 flex items-center justify-between">
-                            <h3 className="text-sm font-bold text-gray-200">
-                                Upcoming Events (Comming soon)
-                            </h3>
-                            <button className="text-xs text-[#a855f7] hover:underline">
-                                See all
-                            </button>
-                        </div>
-                        <div className="space-y-4">
-                            {[1, 2].map((i) => (
-                                <div
-                                    key={i}
-                                    className="flex items-center gap-3"
-                                >
-                                    <div className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-xl bg-[#2a2a38] text-center border border-[#3f3f46]">
-                                        <span className="text-xs font-bold text-white">
-                                            1{i}
-                                        </span>
-                                        <span className="text-[10px] text-[#a1a1aa] uppercase">
-                                            Dec
-                                        </span>
-                                    </div>
-                                    <div>
-                                        <p className="text-sm font-semibold text-gray-200">
-                                            Creative Workshop
-                                        </p>
-                                        <p className="text-xs text-[#71717a]">
-                                            10:00 AM - 12:00 PM
-                                        </p>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
 
                     {/* Online Contacts */}
                     <div className="rounded-xl bg-[#1a1a24] p-4 border border-[#2a2a38]">

@@ -27,6 +27,14 @@ router.post("/:id/follow",
     authMiddleware,
     asyncHandler(userController.toggleFollow)
 );
+router.get("/friends/mutual",
+    authMiddleware,
+    asyncHandler(userController.getMutualFriends)
+);
+router.get("/friends/recommendations",
+    authMiddleware,
+    asyncHandler(userController.getRecommendedFriends)
+);
 router.get("/:id/followers",
     asyncHandler(userController.getFollowers)
 );

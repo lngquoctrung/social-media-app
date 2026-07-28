@@ -66,6 +66,24 @@ const getFollowing = async (req, res) => {
 	}).send(res);
 };
 
+const getMutualFriends = async (req, res) => {
+	const { userId } = req.user;
+	const friends = await userService.getMutualFriends(userId);
+	new Ok({
+		message: "Get mutual friends successfully",
+		metadata: friends,
+	}).send(res);
+};
+
+const getRecommendedFriends = async (req, res) => {
+	const { userId } = req.user;
+	const recommendations = await userService.getRecommendedFriends(userId);
+	new Ok({
+		message: "Get recommended friends successfully",
+		metadata: recommendations,
+	}).send(res);
+};
+
 module.exports = {
 	getProfile,
 	getUserById,
@@ -73,5 +91,7 @@ module.exports = {
 	updateProfile,
     toggleFollow,
     getFollowers,
-    getFollowing
+    getFollowing,
+    getMutualFriends,
+    getRecommendedFriends
 };

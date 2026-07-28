@@ -50,12 +50,18 @@ class PostService {
                     matchStage = {
                         $or: [
                             { user: { $in: followingIds } },
-                            { user: { $in: recommendedUserIds }, privacy: 'public' }
+                            { user: { $in: recommendedUserIds }, privacy: 'public' },
+                            { user: new mongoose.Types.ObjectId(currentUserId) }
                         ]
                     };
                 } else {
                     // Cold start
-                    matchStage = { privacy: 'public' };
+                    matchStage = {
+                        $or: [
+                            { privacy: 'public' },
+                            { user: new mongoose.Types.ObjectId(currentUserId) }
+                        ]
+                    };
                 }
             } else {
                 // Unauthenticated home feed
