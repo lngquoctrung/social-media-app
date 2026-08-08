@@ -4,14 +4,150 @@
 :root {
     --color-primary: #a855f7;
     --color-primary-dark: #9333ea;
-    --bg-dark: #0f0f14;
+    --bg-main: #0f0f14;
     --bg-card: #1a1a24;
+    --bg-sub: #2a2a38;
+    --bg-hover: #3f3f46;
+    --text-primary: #ffffff;
+    --text-secondary: #a1a1aa;
+    --border-primary: #2a2a38;
+}
+
+html.light {
+    --bg-main: #f1f5f9;
+    --bg-card: #ffffff;
+    --bg-sub: #f8fafc;
+    --bg-hover: #e2e8f0;
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --border-primary: #cbd5e1;
 }
 
 body {
-    background-color: var(--bg-dark);
-    color: #fff;
+    background-color: var(--bg-main);
+    color: var(--text-primary);
     font-family: "Inter", system-ui, sans-serif;
+    transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+/* Light mode overrides for core UI containers and elements */
+html.light body {
+    background-color: #f1f5f9 !important;
+    color: #0f172a !important;
+}
+
+/* Backgrounds in Light mode */
+html.light .bg-\[\#0f0f14\],
+html.light .bg-\[\#12121a\],
+html.light .bg-\[\#181820\] {
+    background-color: #f1f5f9 !important;
+}
+
+html.light .bg-\[\#1a1a24\],
+html.light .bg-\[\#22222e\],
+html.light .bg-\[\#242535\],
+html.light .bg-\[\#1c1d27\],
+html.light .card-glass {
+    background-color: #ffffff !important;
+    border-color: #e2e8f0 !important;
+}
+
+html.light .bg-\[\#2a2a38\] {
+    background-color: #f8fafc !important;
+    border-color: #e2e8f0 !important;
+}
+
+html.light .bg-\[\#3f3f46\],
+html.light .bg-\[\#52525b\],
+html.light .bg-\[\#374151\] {
+    background-color: #e2e8f0 !important;
+    color: #0f172a !important;
+}
+
+/* Hover states in Light mode */
+html.light .hover\:bg-\[\#1a1a24\]:hover,
+html.light .hover\:bg-\[\#22222e\]:hover,
+html.light .hover\:bg-\[\#2a2a38\]:hover,
+html.light .hover\:bg-\[\#3f3f46\]:hover,
+html.light .hover\:bg-\[\#52525b\]:hover {
+    background-color: #e2e8f0 !important;
+}
+
+/* Text colors in Light mode */
+html.light .text-white {
+    color: #0f172a !important;
+}
+
+html.light .text-\[\#a1a1aa\],
+html.light .text-\[\#b8b8c8\],
+html.light .text-\[\#6a6a7a\],
+html.light .text-gray-400,
+html.light .text-gray-300,
+html.light .text-slate-400,
+html.light .text-slate-300 {
+    color: #475569 !important;
+}
+
+html.light .text-\[\#52525b\],
+html.light .text-\[\#71717a\],
+html.light .text-\[\#e4e4e7\] {
+    color: #1e293b !important;
+}
+
+html.light .hover\:text-white:hover {
+    color: #0f172a !important;
+}
+
+/* Borders in Light mode */
+html.light .border-\[\#2a2a38\],
+html.light .border-\[\#3a3a4a\],
+html.light .border-\[\#1a1a24\],
+html.light .divide-\[\#2a2a38\] > :not([hidden]) ~ :not([hidden]),
+html.light .divide-\[\#3a3a4a\] > :not([hidden]) ~ :not([hidden]) {
+    border-color: #e2e8f0 !important;
+}
+
+/* MUST PRESERVE WHITE TEXT for primary purple/blue/red buttons, badges, and dark photo overlays */
+html.light .btn-primary,
+html.light .btn-primary *,
+html.light .bg-purple-600,
+html.light .bg-purple-600 *,
+html.light .bg-purple-700,
+html.light .bg-purple-700 *,
+html.light .bg-\[\#6366f1\],
+html.light .bg-\[\#6366f1\] *,
+html.light .bg-\[\#a855f7\],
+html.light .bg-\[\#a855f7\] *,
+html.light .bg-red-500,
+html.light .bg-red-500 *,
+html.light .bg-red-600,
+html.light .bg-red-600 *,
+html.light .bg-black\/40,
+html.light .bg-black\/40 *,
+html.light .bg-black\/50,
+html.light .bg-black\/50 *,
+html.light .bg-black\/60,
+html.light .bg-black\/60 *,
+html.light .bg-black\/70,
+html.light .bg-black\/70 *,
+html.light .bg-black\/80,
+html.light .bg-black\/80 * {
+    color: #ffffff !important;
+}
+
+/* Inputs & Textareas in Light mode */
+html.light input,
+html.light textarea,
+html.light select,
+html.light .input-field {
+    background-color: #f8fafc !important;
+    color: #0f172a !important;
+    border-color: #cbd5e1 !important;
+}
+
+html.light input::placeholder,
+html.light textarea::placeholder {
+    color: #94a3b8 !important;
 }
 
 @layer components {
@@ -38,14 +174,14 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-    background: #0f0f14;
+    background: var(--bg-main);
 }
 
 ::-webkit-scrollbar-thumb {
-    background: #2a2a38;
+    background: var(--bg-sub);
     border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: #3f3f46;
+    background: var(--bg-hover);
 }

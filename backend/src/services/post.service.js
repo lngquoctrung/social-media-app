@@ -1,4 +1,5 @@
 const postModel = require('../models/post.model');
+const followModel = require('../models/follow.model');
 const mongoose = require('mongoose');
 const path = require("path");
 const config = require("../config");
@@ -9,10 +10,67 @@ const { NotFoundError, ForbiddenError } = require("../core/error.response");
 class PostService {
     getAllPosts = async (currentUserId, filterUserId, page = 1, limit = 10) => {
         const skip = (page - 1) * limit;
+        let matchStage = {};
+
+        if (filterUserId) {
+            // Profile Feed
+            if (currentUserId && currentUserId.toString() === filterUserId.toString()) {
+                // Own profile: see all
+                matchStage = { user: new mongoose.Types.ObjectId(filterUserId) };
+            } else {
+                // Someone else's profile
+                let isFollowing = false;
+                if (currentUserId) {
+                    const follow = await followModel.findOne({ follower: currentUserId, following: filterUserId });
+                    isFollowing = !!follow;
+                }
+                
+                if (isFollowing) {
+                    matchStage = { user: new mongoose.Types.ObjectId(filterUserId) };
+                } else {
+                    matchStage = { user: new mongoose.Types.ObjectId(filterUserId), privacy: 'public' };
+                }
+            }
+        } else {
+            // Home Feed
+            if (currentUserId) {
+                const followingDocs = await followModel.find({ follower: currentUserId }).lean();
+                const followingIds = followingDocs.map(f => f.following);
+
+                if (followingIds.length > 0) {
+                    // Smart Recommendation: 2nd degree connections
+                    const secondDegreeFollows = await followModel.find({ 
+                        follower: { $in: followingIds },
+                        following: { $nin: [...followingIds, currentUserId] } 
+                    }).lean();
+                    
+                    const recommendedUserIds = [...new Set(secondDegreeFollows.map(f => f.following.toString()))]
+                        .map(id => new mongoose.Types.ObjectId(id));
+
+                    matchStage = {
+                        $or: [
+                            { user: { $in: followingIds } },
+                            { user: { $in: recommendedUserIds }, privacy: 'public' },
+                            { user: new mongoose.Types.ObjectId(currentUserId) }
+                        ]
+                    };
+                } else {
+                    // Cold start
+                    matchStage = {
+                        $or: [
+                            { privacy: 'public' },
+                            { user: new mongoose.Types.ObjectId(currentUserId) }
+                        ]
+                    };
+                }
+            } else {
+                // Unauthenticated home feed
+                matchStage = { privacy: 'public' };
+            }
+        }
+
         const pipeline = [
-            ...(filterUserId ? [{
-                $match: { user: new mongoose.Types.ObjectId(filterUserId) }
-            }] : []),
+            { $match: matchStage },
             { $sort: { createdAt: -1 } },
             {
                 $facet: {
@@ -194,7 +252,8 @@ class PostService {
         const post = await postModel.create({
             content: data.content,
             user: userId,
-            images: imageUrls
+            images: imageUrls,
+            privacy: data.privacy || 'public'
         });
         return post;
     }

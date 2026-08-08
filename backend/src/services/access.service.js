@@ -84,6 +84,7 @@ class AccessService {
                     _id: foundUser._id,
                     name: foundUser.name,
                     email: foundUser.email,
+                    avatar: foundUser.avatar,
                     role: foundUser.role
                 },
                 accessToken,
@@ -99,6 +100,10 @@ class AccessService {
     }
 
     refreshToken = async (refreshToken) => {
+        if (!refreshToken) {
+            throw new AuthFailureError({ message: "Refresh token missing" });
+        }
+
         // Check token used or not
         const foundToken = await tokenService.findByRefreshTokenUsed(refreshToken);
 
@@ -144,6 +149,7 @@ class AccessService {
                     _id: foundUser._id,
                     name: foundUser.name,
                     email: foundUser.email,
+                    avatar: foundUser.avatar,
                     role: foundUser.role
                 },
                 accessToken: newAccessToken,
@@ -151,6 +157,7 @@ class AccessService {
             }
         }
     }
+
 }
 
 module.exports = new AccessService();

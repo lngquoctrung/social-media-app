@@ -35,7 +35,7 @@ services:
         image: ghcr.io/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/frontend:latest
         container_name: social-media-app-react
         ports:
-            - "127.0.0.1:3001:80"
+            - "127.0.0.1:3000:80"
         depends_on:
             - express
         volumes:

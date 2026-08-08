@@ -18,6 +18,9 @@ export const API_ENDPOINTS = {
         GET_ONE: (id) => `/api/v1/users/${id}`,
         UPDATE_PROFILE: '/api/v1/users/me',
         UPLOAD_AVATAR: '/api/v1/users/me/avatar',
+        TOGGLE_FOLLOW: (id) => `/api/v1/users/${id}/follow`,
+        FOLLOWERS: (id) => `/api/v1/users/${id}/followers`,
+        FOLLOWING: (id) => `/api/v1/users/${id}/following`,
     },
     COMMENTS: {
         LIST: (postId) => `/api/v1/comments/${postId}`,

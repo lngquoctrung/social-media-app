@@ -36,7 +36,15 @@ export const AuthProvider = ({ children }) => {
             email,
             password,
         });
-        const userData = res.data.metadata.user;
+        let userData = res.data.metadata.user;
+        try {
+            const profileRes = await api.get(API_ENDPOINTS.USERS.ME);
+            if (profileRes.data?.metadata) {
+                userData = profileRes.data.metadata;
+            }
+        } catch (e) {
+            console.warn("Could not fetch full user profile on login", e);
+        }
         setUser(userData);
         localStorage.setItem("user", JSON.stringify(userData));
         return userData;
@@ -50,11 +58,20 @@ export const AuthProvider = ({ children }) => {
             birthday,
             gender,
         });
-        const userData = res.data.metadata.user;
+        let userData = res.data.metadata.user;
+        try {
+            const profileRes = await api.get(API_ENDPOINTS.USERS.ME);
+            if (profileRes.data?.metadata) {
+                userData = profileRes.data.metadata;
+            }
+        } catch (e) {
+            console.warn("Could not fetch full user profile on register", e);
+        }
         setUser(userData);
         localStorage.setItem("user", JSON.stringify(userData));
         return userData;
     };
+
 
     const logout = async () => {
         try {

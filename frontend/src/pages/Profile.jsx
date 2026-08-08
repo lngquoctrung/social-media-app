@@ -6,6 +6,7 @@ import { API_ENDPOINTS } from "../api/endpoints";
 import { PostCard } from "../components/post/PostCard";
 import EditProfileModal from "../components/profile/EditProfileModal";
 import AvatarUploadModal from "../components/profile/AvatarUploadModal";
+import FollowListModal from "../components/profile/FollowListModal";
 import {
     FaEdit,
     FaCamera,
@@ -23,12 +24,14 @@ export const Profile = () => {
     const [user, setUser] = useState(null);
     const [posts, setPosts] = useState([]);
     const [photos, setPhotos] = useState([]);
-    const [activeTab, setActiveTab] = useState("posts");
+    const [activeTab, setActiveTab] = useState("all");
+
     const [loading, setLoading] = useState(true);
     const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isCropModalOpen, setIsCropModalOpen] = useState(false);
     const [selectedImage, setSelectedImage] = useState(null);
+    const [isFollowModalOpen, setIsFollowModalOpen] = useState({ type: null, open: false });
     const avatarInputRef = useRef(null);
 
     const [page, setPage] = useState(1);
@@ -123,6 +126,21 @@ export const Profile = () => {
             console.error(error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleToggleFollow = async () => {
+        if (!currentUser) return navigate("/login");
+        try {
+            const res = await api.post(API_ENDPOINTS.USERS.TOGGLE_FOLLOW(id));
+            const isFollowing = res.data.metadata.followed;
+            setUser((prev) => ({
+                ...prev,
+                isFollowing,
+                followersCount: isFollowing ? (prev.followersCount || 0) + 1 : (prev.followersCount || 1) - 1
+            }));
+        } catch (error) {
+            console.error("Failed to toggle follow", error);
         }
     };
 
@@ -263,6 +281,14 @@ export const Profile = () => {
                 onUpload={handleSaveAvatar}
                 isLoading={isUploadingAvatar}
             />
+            {isFollowModalOpen.open && (
+                <FollowListModal
+                    isOpen={isFollowModalOpen.open}
+                    onClose={() => setIsFollowModalOpen({ type: null, open: false })}
+                    type={isFollowModalOpen.type}
+                    userId={id}
+                />
+            )}
             <input
                 type="file"
                 ref={avatarInputRef}
@@ -325,6 +351,16 @@ export const Profile = () => {
                                             .toLowerCase()
                                             .replace(/\s/g, "")}
                                 </p>
+                                <div className="mt-3 flex items-center justify-center gap-6 md:justify-start">
+                                    <div className="text-center cursor-pointer hover:underline" onClick={() => setIsFollowModalOpen({ type: 'followers', open: true })}>
+                                        <span className="block font-bold text-white">{user.followersCount || 0}</span>
+                                        <span className="text-xs text-gray-400 uppercase tracking-wider">Followers</span>
+                                    </div>
+                                    <div className="text-center cursor-pointer hover:underline" onClick={() => setIsFollowModalOpen({ type: 'following', open: true })}>
+                                        <span className="block font-bold text-white">{user.followingCount || 0}</span>
+                                        <span className="text-xs text-gray-400 uppercase tracking-wider">Following</span>
+                                    </div>
+                                </div>
                             </div>
 
                             {/* Action Buttons */}
@@ -339,14 +375,12 @@ export const Profile = () => {
                                 ) : (
                                     <>
                                         <button
-                                            onClick={() =>
-                                                currentUser
-                                                    ? null
-                                                    : navigate("/login")
-                                            }
-                                            className="rounded-lg bg-[#6366f1] px-6 py-2 font-semibold text-white hover:bg-[#4f46e5] transition-colors"
+                                            onClick={handleToggleFollow}
+                                            className={`rounded-lg px-6 py-2 font-semibold text-white transition-colors ${
+                                                user.isFollowing ? "bg-[#3f3f46] hover:bg-[#52525b]" : "bg-[#6366f1] hover:bg-[#4f46e5]"
+                                            }`}
                                         >
-                                            Follow
+                                            {user.isFollowing ? "Following" : "Follow"}
                                         </button>
                                         <button
                                             onClick={() =>
@@ -368,7 +402,7 @@ export const Profile = () => {
 
                         {/* Tabs */}
                         <div className="flex justify-center gap-8 md:justify-start pt-1">
-                            {["Posts", "About", "Friends", "Photos"].map(
+                            {["All", "About", "Friends", "Photos"].map(
                                 (tab) => (
                                     <button
                                         key={tab}
@@ -390,158 +424,285 @@ export const Profile = () => {
                 </div>
             </div>
 
-            {/* Content Section - 3 Column Layout for larger screens to match Home */}
-            <div className="mx-auto max-w-5xl px-4 grid grid-cols-1 md:grid-cols-[340px_1fr] gap-6">
-                {/* Left Sidebar: About & Photos */}
-                <div className="space-y-6">
-                    {/* Intro Card */}
-                    <div className="bg-[#1a1a24] rounded-xl p-4 border border-[#2a2a38]">
-                        <h2 className="text-lg font-bold text-white mb-4">
-                            Intro
-                        </h2>
-                        <div className="space-y-3 text-sm">
-                            {user.gender && (
-                                <div className="flex items-center gap-3 text-gray-300">
-                                    <FaUser className="text-[#6a6a7a] text-lg" />
-                                    <span className="capitalize">
-                                        {user.gender}
-                                    </span>
-                                </div>
-                            )}
-                            {user.birthday && (
-                                <div className="flex items-center gap-3 text-gray-300">
-                                    <FaBirthdayCake className="text-[#6a6a7a] text-lg" />
-                                    <span>
-                                        Born{" "}
-                                        {new Date(
-                                            user.birthday
-                                        ).toLocaleDateString("en-US", {
-                                            month: "long",
-                                            day: "numeric",
-                                            year: "numeric",
-                                        })}
-                                    </span>
-                                </div>
-                            )}
-                            {user.createdAt && (
-                                <div className="flex items-center gap-3 text-gray-300">
-                                    <FaCalendarAlt className="text-[#6a6a7a] text-lg" />
-                                    <span>
-                                        Joined{" "}
-                                        {new Date(
-                                            user.createdAt
-                                        ).toLocaleDateString("en-US", {
-                                            month: "long",
-                                            year: "numeric",
-                                        })}
-                                    </span>
-                                </div>
-                            )}
-                            {isOwnProfile && (
-                                <div className="flex items-center gap-3 text-gray-300">
-                                    <FaEnvelope className="text-[#6a6a7a] text-lg" />
-                                    <span>{user.email}</span>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Photos Card */}
-                    <div className="bg-[#1a1a24] rounded-xl p-4 border border-[#2a2a38]">
-                        <div className="flex items-center justify-between mb-4">
-                            <h2 className="text-lg font-bold text-white">
-                                Photos
+            {/* Content Section */}
+            {activeTab === "all" ? (
+                /* 2-Column Layout for 'All' tab */
+                <div className="mx-auto max-w-5xl px-4 grid grid-cols-1 md:grid-cols-[340px_1fr] gap-6">
+                    {/* Left Sidebar: Intro & Photos Preview */}
+                    <div className="space-y-6">
+                        {/* Intro Card */}
+                        <div className="bg-[#1a1a24] rounded-xl p-4 border border-[#2a2a38]">
+                            <h2 className="text-lg font-bold text-white mb-4">
+                                Intro
                             </h2>
-                            <button className="text-sm text-[#a855f7] hover:underline">
-                                See all
-                            </button>
+                            <div className="space-y-3 text-sm">
+                                {user.gender && (
+                                    <div className="flex items-center gap-3 text-gray-300">
+                                        <FaUser className="text-[#6a6a7a] text-lg" />
+                                        <span className="capitalize">
+                                            {user.gender}
+                                        </span>
+                                    </div>
+                                )}
+                                {user.birthday && (
+                                    <div className="flex items-center gap-3 text-gray-300">
+                                        <FaBirthdayCake className="text-[#6a6a7a] text-lg" />
+                                        <span>
+                                            Born{" "}
+                                            {new Date(
+                                                user.birthday
+                                            ).toLocaleDateString("en-US", {
+                                                month: "long",
+                                                day: "numeric",
+                                                year: "numeric",
+                                            })}
+                                        </span>
+                                    </div>
+                                )}
+                                {user.createdAt && (
+                                    <div className="flex items-center gap-3 text-gray-300">
+                                        <FaCalendarAlt className="text-[#6a6a7a] text-lg" />
+                                        <span>
+                                            Joined{" "}
+                                            {new Date(
+                                                user.createdAt
+                                            ).toLocaleDateString("en-US", {
+                                                month: "long",
+                                                year: "numeric",
+                                            })}
+                                        </span>
+                                    </div>
+                                )}
+                                {isOwnProfile && (
+                                    <div className="flex items-center gap-3 text-gray-300">
+                                        <FaEnvelope className="text-[#6a6a7a] text-lg" />
+                                        <span>{user.email}</span>
+                                    </div>
+                                )}
+                            </div>
                         </div>
-                        <div className="grid grid-cols-3 gap-2">
-                            {photos.slice(0, 9).map((img, i) => (
-                                <div
-                                    key={i}
-                                    className="aspect-square overflow-hidden rounded-lg bg-[#2a2a38]"
+
+                        {/* Photos Card */}
+                        <div className="bg-[#1a1a24] rounded-xl p-4 border border-[#2a2a38]">
+                            <div className="flex items-center justify-between mb-4">
+                                <h2 className="text-lg font-bold text-white">
+                                    Photos
+                                </h2>
+                                <button
+                                    onClick={() => setActiveTab("photos")}
+                                    className="text-sm text-[#a855f7] hover:underline cursor-pointer"
                                 >
-                                    <img
-                                        src={img}
-                                        alt=""
-                                        className="h-full w-full object-cover hover:scale-110 transition-transform duration-300"
-                                    />
-                                </div>
-                            ))}
-                            {photos.length === 0 &&
-                                [1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => (
+                                    See all
+                                </button>
+                            </div>
+                            <div className="grid grid-cols-3 gap-2">
+                                {photos.slice(0, 9).map((img, i) => (
                                     <div
                                         key={i}
-                                        className="aspect-square rounded-lg bg-[#2a2a38]/50"
-                                    ></div>
+                                        className="aspect-square overflow-hidden rounded-lg bg-[#2a2a38]"
+                                    >
+                                        <img
+                                            src={img}
+                                            alt=""
+                                            className="h-full w-full object-cover hover:scale-110 transition-transform duration-300"
+                                        />
+                                    </div>
                                 ))}
+                                {photos.length === 0 &&
+                                    [1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => (
+                                        <div
+                                            key={i}
+                                            className="aspect-square rounded-lg bg-[#2a2a38]/50"
+                                        ></div>
+                                    ))}
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                {/* Right Column: Feed */}
-                <div className="space-y-6">
-                    {/* Create Post Widget */}
-                    {isOwnProfile ? (
-                        <div className="bg-[#1a1a24] rounded-xl p-4 border border-[#2a2a38]">
-                            <div className="flex gap-3">
-                                <img
-                                    src={
-                                        currentUser?.avatar ||
-                                        `https://ui-avatars.com/api/?name=${currentUser?.name}&background=random`
-                                    }
-                                    alt=""
-                                    className="h-10 w-10 rounded-full object-cover"
-                                />
-                                <Link
-                                    to="/create-post"
-                                    className="flex-1 bg-[#2a2a38] hover:bg-[#3f3f46] text-[#6a6a7a] text-sm py-2.5 px-4 rounded-full transition-colors text-left flex items-center"
-                                >
-                                    What's on your mind?
-                                </Link>
-                            </div>
-                        </div>
-                    ) : null}
-
-                    {/* Posts Feed */}
-                    {posts.length === 0 ? (
-                        <div className="bg-[#1a1a24] rounded-xl p-8 text-center border border-[#2a2a38]">
-                            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[#2a2a38] mb-4">
-                                <FaCamera className="text-2xl text-[#6a6a7a]" />
-                            </div>
-                            <h3 className="text-xl font-bold text-white mb-2">
-                                No posts yet
-                            </h3>
-                            <p className="text-[#6a6a7a]">
-                                {isOwnProfile
-                                    ? "Share your first moment!"
-                                    : "This user hasn't posted anything yet."}
-                            </p>
-                        </div>
-                    ) : (
-                        posts.map((post, index) => {
-                            if (posts.length === index + 1) {
-                                return (
-                                    <div
-                                        ref={lastPostElementRef}
-                                        key={post._id}
-                                    >
-                                        <PostCard post={post} />
-                                    </div>
-                                );
-                            } else {
-                                return (
-                                    <PostCard
-                                        key={post._id}
-                                        post={post}
+                    {/* Right Column: Feed */}
+                    <div className="space-y-6">
+                        {/* Create Post Widget */}
+                        {isOwnProfile ? (
+                            <div className="bg-[#1a1a24] rounded-xl p-4 border border-[#2a2a38]">
+                                <div className="flex gap-3">
+                                    <img
+                                        src={
+                                            currentUser?.avatar ||
+                                            `https://ui-avatars.com/api/?name=${currentUser?.name}&background=random`
+                                        }
+                                        alt=""
+                                        className="h-10 w-10 rounded-full object-cover"
                                     />
-                                );
-                            }
-                        })
+                                    <Link
+                                        to="/create-post"
+                                        className="flex-1 bg-[#2a2a38] hover:bg-[#3f3f46] text-[#6a6a7a] text-sm py-2.5 px-4 rounded-full transition-colors text-left flex items-center"
+                                    >
+                                        What's on your mind?
+                                    </Link>
+                                </div>
+                            </div>
+                        ) : null}
+
+                        {/* Posts Feed */}
+                        {posts.length === 0 ? (
+                            <div className="bg-[#1a1a24] rounded-xl p-8 text-center border border-[#2a2a38]">
+                                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[#2a2a38] mb-4">
+                                    <FaCamera className="text-2xl text-[#6a6a7a]" />
+                                </div>
+                                <h3 className="text-xl font-bold text-white mb-2">
+                                    No posts yet
+                                </h3>
+                                <p className="text-[#6a6a7a]">
+                                    {isOwnProfile
+                                        ? "Share your first moment!"
+                                        : "This user hasn't posted anything yet."}
+                                </p>
+                            </div>
+                        ) : (
+                            posts.map((post, index) => {
+                                if (posts.length === index + 1) {
+                                    return (
+                                        <div
+                                            ref={lastPostElementRef}
+                                            key={post._id}
+                                        >
+                                            <PostCard post={post} />
+                                        </div>
+                                    );
+                                } else {
+                                    return (
+                                        <PostCard
+                                            key={post._id}
+                                            post={post}
+                                        />
+                                    );
+                                }
+                            })
+                        )}
+                    </div>
+                </div>
+            ) : (
+                /* Full-width Layout for 'About', 'Friends', 'Photos' tabs */
+                <div className="mx-auto max-w-5xl px-4">
+                    {activeTab === "about" && (
+                        <div className="bg-[#1a1a24] rounded-xl p-6 border border-[#2a2a38]">
+                            <h2 className="text-xl font-bold text-white mb-6 border-b border-[#2a2a38] pb-4">
+                                About {user.name}
+                            </h2>
+                            <div className="space-y-6 text-gray-300">
+                                {user.bio && (
+                                    <div>
+                                        <h3 className="text-sm font-semibold text-gray-400 mb-2 uppercase tracking-wider">Bio</h3>
+                                        <p className="text-md leading-relaxed">{user.bio}</p>
+                                    </div>
+                                )}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+                                    {user.gender && (
+                                        <div className="flex items-center gap-4">
+                                            <div className="bg-[#2a2a38] p-3 rounded-lg"><FaUser className="text-[#a855f7] text-xl" /></div>
+                                            <div>
+                                                <p className="text-xs text-gray-400 uppercase">Gender</p>
+                                                <p className="font-medium capitalize">{user.gender}</p>
+                                            </div>
+                                        </div>
+                                    )}
+                                    {user.birthday && (
+                                        <div className="flex items-center gap-4">
+                                            <div className="bg-[#2a2a38] p-3 rounded-lg"><FaBirthdayCake className="text-[#a855f7] text-xl" /></div>
+                                            <div>
+                                                <p className="text-xs text-gray-400 uppercase">Birthday</p>
+                                                <p className="font-medium">
+                                                    {new Date(user.birthday).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )}
+                                    {user.email && (
+                                        <div className="flex items-center gap-4">
+                                            <div className="bg-[#2a2a38] p-3 rounded-lg"><FaEnvelope className="text-[#a855f7] text-xl" /></div>
+                                            <div>
+                                                <p className="text-xs text-gray-400 uppercase">Email</p>
+                                                <p className="font-medium break-all">{user.email}</p>
+                                            </div>
+                                        </div>
+                                    )}
+                                    {user.createdAt && (
+                                        <div className="flex items-center gap-4">
+                                            <div className="bg-[#2a2a38] p-3 rounded-lg"><FaCalendarAlt className="text-[#a855f7] text-xl" /></div>
+                                            <div>
+                                                <p className="text-xs text-gray-400 uppercase">Joined</p>
+                                                <p className="font-medium">
+                                                    {new Date(user.createdAt).toLocaleDateString("en-US", { month: "long", year: "numeric" })}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === "friends" && (
+                        <div className="bg-[#1a1a24] rounded-xl p-6 border border-[#2a2a38]">
+                            <div className="flex justify-between items-center mb-6 border-b border-[#2a2a38] pb-4">
+                                <h2 className="text-xl font-bold text-white">
+                                    Friends
+                                </h2>
+                                <div className="flex gap-4">
+                                    <button 
+                                        className="text-sm text-gray-300 hover:text-white font-medium bg-[#2a2a38] hover:bg-[#3f3f46] px-4 py-2 rounded-lg transition-colors cursor-pointer"
+                                        onClick={() => setIsFollowModalOpen({ type: 'followers', open: true })}
+                                    >
+                                        Followers ({user.followersCount || 0})
+                                    </button>
+                                    <button 
+                                        className="text-sm text-gray-300 hover:text-white font-medium bg-[#2a2a38] hover:bg-[#3f3f46] px-4 py-2 rounded-lg transition-colors cursor-pointer"
+                                        onClick={() => setIsFollowModalOpen({ type: 'following', open: true })}
+                                    >
+                                        Following ({user.followingCount || 0})
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div className="text-center py-12">
+                                <FaUser className="mx-auto text-4xl text-[#3f3f46] mb-4" />
+                                <p className="text-gray-400">Click the buttons above to view followers and following lists.</p>
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === "photos" && (
+                        <div className="bg-[#1a1a24] rounded-xl p-6 border border-[#2a2a38]">
+                            <h2 className="text-xl font-bold text-white mb-6 border-b border-[#2a2a38] pb-4">
+                                Photos
+                            </h2>
+                            {photos.length === 0 ? (
+                                <div className="text-center py-12">
+                                    <FaCamera className="mx-auto text-4xl text-[#3f3f46] mb-4" />
+                                    <p className="text-gray-400">No photos to display yet.</p>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                                    {photos.map((img, i) => (
+                                        <div
+                                            key={i}
+                                            className="aspect-square overflow-hidden rounded-xl bg-[#2a2a38] border border-[#3f3f46] group relative cursor-pointer"
+                                        >
+                                            <img
+                                                src={img}
+                                                alt=""
+                                                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                            />
+                                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300"></div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     )}
                 </div>
-            </div>
+            )}
+
         </div>
     );
 };

@@ -8,6 +8,8 @@ import {
     FaEllipsisH,
     FaChevronLeft,
     FaChevronRight,
+    FaGlobe,
+    FaLock,
 } from "react-icons/fa";
 import { useAuth } from "../../context/AuthContext";
 import api from "../../api/axios";
@@ -225,9 +227,11 @@ export const PostCard = ({ post, onDelete }) => {
                             >
                                 {post.user?.name}
                             </Link>
-                            <span className="text-xs text-[#6a6a7a]">
-                                {formatTime(post.createdAt)}
-                            </span>
+                            <div className="flex items-center gap-1 text-xs text-[#6a6a7a]">
+                                <span>{formatTime(post.createdAt)}</span>
+                                <span>•</span>
+                                {post.privacy === 'private' ? <FaLock size={10} title="Private (Followers only)" /> : <FaGlobe size={10} title="Public" />}
+                            </div>
                         </div>
                     </div>
                     {isOwner && (
