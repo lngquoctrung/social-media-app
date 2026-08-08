@@ -23,7 +23,7 @@ COPY --from=builder /app/public ./public_template
 COPY docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-EXPOSE 3002
+EXPOSE 3001
 
 ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["node", "src/server.js"]

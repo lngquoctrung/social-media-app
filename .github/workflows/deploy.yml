@@ -102,11 +102,11 @@ jobs:
                       echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
                       cat <<EOF > .env
-                      PORT=3002
+                      PORT=3001
                       HOST=epxress
                       NODE_ENV=production
 
-                      ALLOWED_URLS=${{ secrets.VITE_API_URL_PROD }}
+                      ALLOWED_URLS=${{ secrets.VITE_ALLOWED_URLS }}
 
                       DB_HOST=mongodb
                       DB_PORT=27017
