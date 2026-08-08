@@ -1,7 +1,7 @@
 services:
     # MongoDB Service
     mongodb:
-        image: mongo:latest
+        image: mongo:4.4
         container_name: social-media-app-mongodb
         volumes:
             - ./data/db:/data/db
